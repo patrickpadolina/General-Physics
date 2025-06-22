@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Significant Figures Challenge</title>
+<style>
+body {
+font-family: "Segoe UI", sans-serif;
+background: #f0f8ff;
+color: #333;
+padding: 20px;
+max-width: 800px;
+margin: auto;
+}
+
+h1 {
+text-align: center;
+color: #1e90ff;
+}
+
+.question-box {
+background: #ffffff;
+border: 2px solid #1e90ff;
+padding: 20px;
+margin-bottom: 15px;
+border-radius: 8px;
+box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.question {
+font-size: 1.1em;
+font-weight: bold;
+}
+
+input[type="text"] {
+padding: 8px;
+font-size: 1em;
+margin-top: 8px;
+width: 50%;
+}
+
+button {
+padding: 8px 16px;
+margin-top: 10px;
+background-color: #1e90ff;
+color: white;
+border: none;
+border-radius: 4px;
+cursor: pointer;
+}
+
+button:hover {
+background-color: #104e8b;
+}
+
+.feedback {
+margin-top: 10px;
+font-weight: bold;
+}
+
+.correct {
+color: green;
+}
+
+.incorrect {
+color: red;
+}
+
+.hint {
+font-style: italic;
+color: #ff6347;
+}
+
+.score {
+text-align: center;
+font-size: 1.2em;
+margin-top: 20px;
+padding: 10px;
+border-top: 2px solid #1e90ff;
+}
+</style>
+</head>
+<body>
+<h1>🧪 Significant Figures Game 🎯</h1>
+
+<div id="game-container"></div>
+
+<div class="score" id="score-area"></div>
+
+<script>
+const sigFigQuestions = [
+{ q: "How many significant figures are in 0.004560?", a: "4", hint: "Leading zeros are not significant." },
+{ q: "How many significant figures are in 12.00?", a: "4", hint: "Trailing zeros after decimal are significant." },
+{ q: "How many significant figures are in 100?", a: "1", hint: "No decimal = ambiguous zeros." },
+{ q: "How many significant figures are in 100.0?", a: "4", hint: "The decimal makes all zeros significant." },
+{ q: "How many significant figures are in 0.00300?", a: "3", hint: "Leading zeros aren't counted, but trailing zeros after decimal are." },
+{ q: "How many significant figures are in 5.6070?", a: "5", hint: "All non-zero digits and trailing zeros after decimal are counted." },
+{ q: "How many significant figures are in 6.02 x 10^23?", a: "3", hint: "Only digits in coefficient count." },
+{ q: "How many significant figures are in 7000?", a: "1", hint: "No decimal means trailing zeros are not counted." },
+{ q: "How many significant figures are in 7.000?", a: "4", hint: "All digits including trailing zeros after decimal count." },
+{ q: "How many significant figures are in 0.01020?", a: "4", hint: "Ignore leading zeros; count all others." }
+];
+
+const opQuestions = [
+{ q: "3.24 + 7.1 = ?", a: "10.3", hint: "Use the least decimal places: 7.1 has 1 decimal place." },
+{ q: "5.678 - 2.3 = ?", a: "3.4", hint: "Limit to one decimal place like 2.3." },
+{ q: "2.5 × 3.42 = ?", a: "8.6", hint: "Use least number of significant figures (2.5 has 2 sig figs)." },
+{ q: "7.00 ÷ 2.0 = ?", a: "3.5", hint: "Least sig figs is 2." },
+{ q: "6.022 × 10^23 × 3 = ?", a: "1.8e24", hint: "3 has 1 sig fig; answer should have 1 sig fig." },
+{ q: "15.00 + 0.22 = ?", a: "15.22", hint: "Both values go up to 2 decimal places." },
+{ q: "14.5 × 2.10 = ?", a: "30.5", hint: "3 sig figs (least is 3)." },
+{ q: "9.00 ÷ 3.0 = ?", a: "3.0", hint: "Least sig figs is 2." },
+{ q: "7.1 - 2.35 = ?", a: "4.8", hint: "Answer should be rounded to 1 decimal place." },
+{ q: "8.600 + 1.02 = ?", a: "9.62", hint: "Final answer should have 2 decimal places." }
+];
+
+const allQuestions = [...sigFigQuestions, ...opQuestions];
+let current = 0;
+let score = 0;
+let mistakes = 0;
+
+function renderQuestion() {
+if (current >= allQuestions.length) {
+document.getElementById('game-container').innerHTML = '<h2>🎉 Game Complete!</h2>';
+document.getElementById('score-area').textContent = `Your Score: ${score} / ${allQuestions.length}`;
+return;
+}
+
+const questionObj = allQuestions[current];
+
+const container = `
+<div class="question-box">
+<div class="question">Q${current + 1}: ${questionObj.q}</div>
+<input type="text" id="answer" placeholder="Enter your answer" />
+<button onclick="checkAnswer()">Submit</button>
+<div class="feedback" id="feedback"></div>
+</div>
+`;
+
+document.getElementById('game-container').innerHTML = container;
+}
+
+function checkAnswer() {
+const input = document.getElementById('answer').value.trim();
+const correct = allQuestions[current].a;
+const feedback = document.getElementById('feedback');
+
+if (input === correct) {
+score++;
+feedback.innerHTML = `<span class="correct">✅ Correct!</span>`;
+mistakes = 0;
+setTimeout(() => {
+current++;
+renderQuestion();
+}, 1000);
+} else {
+mistakes++;
+feedback.innerHTML = `<span class="incorrect">❌ Incorrect!</span><br/><span class="hint">Hint: ${allQuestions[current].hint}</span>`;
+if (mistakes >= 5) {
+feedback.innerHTML += `<br/><span class="hint">Too many incorrect tries! Review your rules on sig figs.</span>`;
+}
+}
+
+document.getElementById('score-area').textContent = `Current Score: ${score} / ${allQuestions.length}`;
+}
+
+renderQuestion();
+</script>
+</body>
+</html>
