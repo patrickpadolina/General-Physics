@@ -1,0 +1,883 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="utf-8" />
+
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+
+<title>SciBingo!</title>
+
+<style>
+
+  :root{
+
+    --blue:#0ea5e9;
+
+    --muted:#475569;
+
+    --card-bg:#ffffff;
+
+    --panel-bg:#f8fafc;
+
+  }
+
+  body {
+
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+
+    margin: 0;
+
+    background: linear-gradient(180deg,#e6f7ff 0,#f8faff 100%);
+
+    min-height: 100vh;
+
+    display: flex;
+
+    align-items: stretch;
+
+    justify-content: center;
+
+    padding: 18px;
+
+  }
+
+  .container {
+
+    display: flex;
+
+    width: 100%;
+
+    max-width: 1400px;
+
+    background: var(--card-bg);
+
+    border-radius: 14px;
+
+    overflow: hidden;
+
+    box-shadow: 0 12px 40px rgba(2,6,23,0.12);
+
+  }
+
+  /* Left (question) */
+
+  .left-panel {
+
+    flex: 2;
+
+    background: var(--panel-bg);
+
+    padding: 28px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 20px;
+
+  }
+
+  .title-row { text-align:center; }
+
+  h1 { margin:0; font-size:34px; color:var(--blue); letter-spacing: -1px; }
+
+  p.lead { margin:6px 0 0; color:var(--muted); font-size:14px; }
+
+  .question-panel {
+
+    flex: 1;
+
+    border-radius: 12px;
+
+    background: #fff;
+
+    border: 3px solid rgba(14,165,233,0.12);
+
+    padding: 26px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    text-align:center;
+
+  }
+
+  .letter { font-size:84px; font-weight:900; color:var(--blue); line-height:1; }
+
+  .topic { font-size:26px; color:#0f172a; margin-top:6px; font-weight:700; }
+
+  .question { margin-top:18px; font-size:40px; line-height:1.15; font-weight:600; color:#0b1220; max-width:1100px; }
+
+  .answer { margin-top:12px; font-size:28px; color:#16a34a; display:none; font-weight:800; }
+
+  .controls {
+
+    display:flex;
+
+    gap:12px;
+
+    flex-wrap:wrap;
+
+    justify-content:center;
+
+    align-items:center;
+
+  }
+
+  button {
+
+    background: var(--blue);
+
+    color: white;
+
+    border: none;
+
+    padding: 12px 18px;
+
+    border-radius: 10px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    font-size:14px;
+
+  }
+
+  button.secondary {
+
+    background:#fff;
+
+    color:var(--blue);
+
+    border:1px solid rgba(14,165,233,0.18);
+
+    font-weight:700;
+
+  }
+
+  button.ghost {
+
+    background:transparent;
+
+    color:var(--blue);
+
+    border:0;
+
+    text-decoration:underline;
+
+    font-weight:600;
+
+  }
+
+  /* Right (pattern + history) */
+
+  .right-panel {
+
+    flex: 1;
+
+    background: #fff;
+
+    border-left: 1px solid #eef2f7;
+
+    padding: 22px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+  }
+
+  .pattern {
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+  }
+
+  .pattern h2 { margin:0 0 8px; color:var(--blue); font-size:20px; }
+
+  .grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(5, 54px);
+
+    grid-template-rows: repeat(5, 54px);
+
+    gap:8px;
+
+    background:transparent;
+
+    padding:8px;
+
+    border-radius:10px;
+
+  }
+
+  .cell {
+
+    width:54px;
+
+    height:54px;
+
+    border-radius:8px;
+
+    background:#f7fafc;
+
+    border:2px solid #e6eef6;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-weight:800;
+
+    color:#334155;
+
+    user-select:none;
+
+    font-size:18px;
+
+  }
+
+  .cell.free { font-size:16px; color:#0b1220; }
+
+  .cell.active {
+
+    background:var(--blue);
+
+    color:white;
+
+    border-color:rgba(14,165,233,0.9);
+
+    box-shadow: 0 6px 18px rgba(14,165,233,0.18);
+
+  }
+
+  .pattern-meta { margin-top:8px; font-weight:700; color:#0f172a; }
+
+  .history { flex:1; overflow:auto; border-top:1px solid #eef2f7; padding-top:10px; font-size:13px; color:#334155; }
+
+  .history .group-title { color:var(--blue); font-weight:800; margin-top:8px; margin-bottom:6px; }
+
+  .history-item { margin-left:8px; margin-bottom:6px; line-height:1.2; }
+
+  /* responsive */
+
+  @media (max-width:980px){
+
+    .container { flex-direction:column; max-width:920px; }
+
+    .left-panel, .right-panel { flex:unset; width:100%;}
+
+    .letter { font-size:64px; }
+
+    .question { font-size:28px; }
+
+    .grid { grid-template-columns: repeat(5,40px); grid-template-rows: repeat(5,40px); gap:6px; }
+
+    .cell { width:40px; height:40px; font-size:14px; }
+
+  }
+
+</style>
+
+</head>
+
+<body>
+
+  <div class="container">
+
+    <!-- LEFT: question display -->
+
+    <div class="left-panel">
+
+      <div class="title-row">
+
+        <h1>SciBingo!</h1>
+
+        <p class="lead">A classroom science bingo randomizer. Roll questions (B, I, N, G, O) and show the SciBingo Pattern for the round.</p>
+
+      </div>
+
+      <div class="question-panel" aria-live="polite">
+
+        <div class="letter" id="letter">—</div>
+
+        <div class="topic" id="topic">Press "Roll Question" to begin</div>
+
+        <div class="question" id="question"></div>
+
+        <div class="answer" id="answer"></div>
+
+      </div>
+
+      <div class="controls">
+
+        <button id="rollBtn">🎲 Roll Question</button>
+
+        <button id="revealBtn" class="secondary">Reveal Answer</button>
+
+        <button id="resetBtn" class="secondary">Reset Used</button>
+
+        <button id="patternBtn" class="secondary">Randomize Pattern</button>
+
+      </div>
+
+    </div>
+
+    <!-- RIGHT: pattern + history -->
+
+    <div class="right-panel">
+
+      <div class="pattern">
+
+        <h2>SciBingo Pattern</h2>
+
+        <div class="grid" id="patternGrid" aria-hidden="false"></div>
+
+        <div class="pattern-meta" id="patternName">(pattern will appear here)</div>
+
+      </div>
+
+      <div class="history" id="history">
+
+        <div style="font-weight:800;color:#0f172a">History</div>
+
+        <div id="historyList"></div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+<script>
+
+/* Data (full question + answer sets exactly as provided) */
+
+const DATA = {
+
+  B: { title: 'Biology Questions (B)', questions: [
+
+    {q:'It is the part of the plant that makes food using sunlight.',a:'Leaf'},
+
+    {q:'It is the gas humans need to breathe in to survive.',a:'Oxygen'},
+
+    {q:'It is the organ that pumps blood through the body.',a:'Heart'},
+
+    {q:'It is the basic unit of life.',a:'Cell'},
+
+    {q:'It is an organism that makes its own food.',a:'Producer'},
+
+    {q:'It is the name for animals that eat only plants.',a:'Herbivores'},
+
+    {q:'It is the organ that helps you breathe.',a:'Lungs'},
+
+    {q:'It is the part of the cell that controls the cell’s activities.',a:'Nucleus'},
+
+    {q:'It is the green pigment in plants that helps with photosynthesis.',a:'Chlorophyll'},
+
+    {q:'It is the name for animals that give birth to live young.',a:'Mammals'},
+
+    {q:'It is the body part that helps us see.',a:'Eye'},
+
+    {q:'It is the change from a caterpillar to a butterfly.',a:'Metamorphosis'},
+
+    {q:'It is the part of the body that breaks down food using acid.',a:'Stomach'},
+
+    {q:'It is the type of animal that lays eggs and has feathers.',a:'Bird'},
+
+    {q:'It is the organ that filters waste from the blood.',a:'Kidney'}
+
+  ]},
+
+  I: { title: 'Chemistry Questions (I)', questions: [
+
+    {q:'It is a state of matter that has a definite shape and volume.',a:'Solid'},
+
+    {q:'It is the chemical name for water.',a:'H₂O'},
+
+    {q:'It is the gas that plants take in from the air.',a:'Carbon dioxide'},
+
+    {q:'It is the tool used to measure temperature.',a:'Thermometer'},
+
+    {q:'It is the process of ice turning into water.',a:'Melting'},
+
+    {q:'It is a substance made of only one type of atom.',a:'Element'},
+
+    {q:'It is the state of matter that spreads out to fill any space.',a:'Gas'},
+
+    {q:'It is a subatomic particle that carries a positive charge.',a:'Proton'},
+
+    {q:'It is a compound made up of sodium and chlorine atoms.',a:'Salt'},
+
+    {q:'It is the component of a solution that dissolves the solute.',a:'Solvent'},
+
+    {q:'It is the temperature at which a liquid becomes a gas.',a:'Boiling point'},
+
+    {q:'It is the smallest part of an element.',a:'Atom'},
+
+    {q:'It is the process when liquid turns into solid',a:'Freezing'},
+
+    {q:'It is the particle in an atom with no charge.',a:'Neutron'},
+
+    {q:'It is the process of liquid water turning into gas.',a:'Evaporation'}
+
+  ]},
+
+  N: { title: 'Physics Questions (N)', questions: [
+
+    {q:'It is the force that pulls everything toward Earth.',a:'Gravity'},
+
+    {q:'It is the term for a push or a pull.',a:'Force'},
+
+    {q:'It is the unit used to measure energy.',a:'Joule'},
+
+    {q:'It is the type of energy from moving objects.',a:'Kinetic energy'},
+
+    {q:'It is the form of energy we get from the sun.',a:'Light energy'},
+
+    {q:'It is the type of energy stored in an object due to its position.',a:'Potential energy'},
+
+    {q:'It is the tendency of an object to resist a change in motion.',a:'Inertia'},
+
+    {q:'It is the unit used to measure speed.',a:'m/s'},
+
+    {q:'It is the type of energy made by vibrations.',a:'Sound energy'},
+
+    {q:'It is the measure of how much matter is in an object.',a:'Mass'},
+
+    {q:'It is the thing that slows down a sliding object.',a:'Friction'},
+
+    {q:'It is the bouncing back of light from a surface.',a:'Reflection'},
+
+    {q:'It is the tool used to see far-away objects in space.',a:'Telescope'},
+
+    {q:'It is the simple machine that is a round object that rolls.',a:'Wheel'},
+
+    {q:'It is the color of light with the longest wavelength.',a:'Red'}
+
+  ]},
+
+  G: { title: 'Earth and Space Science (G)', questions: [
+
+    {q:'It is the planet we live on.',a:'Earth'},
+
+    {q:'It is the natural satellite that orbits the Earth.',a:'Moon'},
+
+    {q:'It is the layer of air that surrounds the Earth.',a:'Atmosphere'},
+
+    {q:'It is the general term for rain, snow, and hail.',a:'Precipitation'},
+
+    {q:'It is the outer layer of the Earth made of solid rock.',a:'Crust'},
+
+    {q:'It is a large body of moving ice.',a:'Glacier'},
+
+    {q:'It is the movement of Earth around the sun.',a:'Revolution'},
+
+    {q:'It is the sudden movement of the Earth’s crust.',a:'Earthquake'},
+
+    {q:'It is the name of the event when the moon blocks the sun.',a:'Solar eclipse'},
+
+    {q:'It is the type of rock formed from cooled magma.',a:'Igneous rock'},
+
+    {q:'It is the process of rocks breaking down by wind or water.',a:'Weathering'},
+
+    {q:'It is the celestial body found at the center of our solar system.',a:'Sun'},
+
+    {q:'It is the name of the big explosion that started the universe.',a:'Big Bang'},
+
+    {q:'It is the tool used to measure earthquakes.',a:'Seismograph'},
+
+    {q:'It is a rock that burns brightly when entering Earth’s atmosphere.',a:'Meteor'}
+
+  ]},
+
+  O: { title: 'General Science (O)', questions: [
+
+    {q:'It is the person who studies animals.',a:'Zoologist'},
+
+    {q:'It is the tool used to see tiny objects.',a:'Microscope'},
+
+    {q:'It is a scientific guess in conducting an experiment.',a:'Hypothesis'},
+
+    {q:'It is the set of steps used to solve scientific problems.',a:'Scientific method'},
+
+    {q:'It is the person who studies Earth, rocks, and soil.',a:'Geologist'},
+
+    {q:'It is the person who studies plants.',a:'Botanist'},
+
+    {q:'It is a branch of science that studies weather and climate.',a:'Meteorology'},
+
+    {q:'It is a lab material that can be used to protect your hands.',a:'Gloves'},
+
+    {q:'It is the final part of a science experiment.',a:'Conclusion'},
+
+    {q:'It is an instrument used to measure time.',a:'Stopwatch'},
+
+    {q:'It is the tool used to measure length.',a:'Ruler'},
+
+    {q:'It is the variable you change on purpose.',a:'Independent variable'},
+
+    {q:'It is a branch of science that studies the stars and planets.',a:'Astronomy'},
+
+    {q:'It is the scientist who discovered gravity after seeing an apple fall.',a:'Isaac Newton'},
+
+    {q:'It is what you wear to protect your eyes during experiments.',a:'Goggles'}
+
+  ]}
+
+};
+
+/* state */
+
+const usedMap = { B:new Set(), I:new Set(), N:new Set(), G:new Set(), O:new Set() };
+
+const historyData = { B:[], I:[], N:[], G:[], O:[] };
+
+/* elements */
+
+const rollBtn = document.getElementById('rollBtn');
+
+const revealBtn = document.getElementById('revealBtn');
+
+const resetBtn = document.getElementById('resetBtn');
+
+const patternBtn = document.getElementById('patternBtn');
+
+const letterEl = document.getElementById('letter');
+
+const topicEl = document.getElementById('topic');
+
+const questionEl = document.getElementById('question');
+
+const answerEl = document.getElementById('answer');
+
+const historyList = document.getElementById('historyList');
+
+const patternGrid = document.getElementById('patternGrid');
+
+const patternNameEl = document.getElementById('patternName');
+
+/* helpers */
+
+function getPool(){
+
+  const pool=[];
+
+  for(const col of ['B','I','N','G','O']){
+
+    DATA[col].questions.forEach((item,i)=>{
+
+      if(!usedMap[col].has(i)) pool.push({column:col,question:item.q,answer:item.a,index:i});
+
+    });
+
+  }
+
+  return pool;
+
+}
+
+function setPick(p){
+
+  letterEl.textContent = p.column;
+
+  topicEl.textContent = DATA[p.column].title;
+
+  questionEl.textContent = p.question;
+
+  answerEl.textContent = p.answer;
+
+  answerEl.style.display = 'none';
+
+  // push to history
+
+  historyData[p.column].push(p.question);
+
+  renderHistory();
+
+}
+
+function rollRandom(){
+
+  const pool=getPool();
+
+  if(pool.length===0){
+
+    letterEl.textContent='—';
+
+    topicEl.textContent='';
+
+    questionEl.textContent='All questions used. Reset to start again.';
+
+    answerEl.style.display='none';
+
+    return;
+
+  }
+
+  const pick = pool[Math.floor(Math.random()*pool.length)];
+
+  usedMap[pick.column].add(pick.index);
+
+  setPick(pick);
+
+}
+
+function resetUsed(){
+
+  for(const k of Object.keys(usedMap)) usedMap[k].clear();
+
+  for(const k of Object.keys(historyData)) historyData[k]=[];
+
+  letterEl.textContent='—';
+
+  topicEl.textContent='Press "Roll Question" to begin';
+
+  questionEl.textContent='';
+
+  answerEl.textContent='';
+
+  answerEl.style.display='none';
+
+  renderHistory();
+
+}
+
+/* reveal answer */
+
+function revealAnswer(){ answerEl.style.display='block'; }
+
+/* history rendering sorted by B I N G O */
+
+function renderHistory(){
+
+  historyList.innerHTML='';
+
+  for(const col of ['B','I','N','G','O']){
+
+    if(historyData[col] && historyData[col].length){
+
+      const groupTitle = document.createElement('div');
+
+      groupTitle.className = 'group-title';
+
+      groupTitle.textContent = `${col} — ${DATA[col].title}`;
+
+      historyList.appendChild(groupTitle);
+
+      historyData[col].forEach(q=>{
+
+        const item = document.createElement('div');
+
+        item.className='history-item';
+
+        item.textContent = '• ' + q;
+
+        historyList.appendChild(item);
+
+      });
+
+    }
+
+  }
+
+}
+
+/* PATTERN GENERATOR
+
+   Allowed patterns (only):
+
+   - Line (horizontal, vertical, diagonal)
+
+   - Four Corners
+
+   - X Pattern (two diagonals)
+
+   - T Pattern (top T or bottom T? we'll use top-middle T and bottom-middle T variations)
+
+   - L Pattern (bottom-left L or bottom-right L)
+
+   - Square/Box (outer perimeter OR inner 3x3)
+
+   - Full House / Blackout
+
+   FREE center (2,2) is always highlighted
+
+*/
+
+function buildPatternGrid(){
+
+  patternGrid.innerHTML='';
+
+  const cells = [];
+
+  for(let r=0;r<5;r++){
+
+    for(let c=0;c<5;c++){
+
+      const div = document.createElement('div');
+
+      div.className='cell';
+
+      if(r===2 && c===2){ div.classList.add('free'); div.textContent='FREE'; }
+
+      patternGrid.appendChild(div);
+
+      cells.push({el:div,r,c});
+
+    }
+
+  }
+
+  return cells;
+
+}
+
+const cells = buildPatternGrid();
+
+/* pattern definitions return array of cell coords to highlight (r,c) */
+
+const PATTERNS = {
+
+  'Line (horizontal)': () => {
+
+    const row = Math.floor(Math.random()*5);
+
+    return cells.filter(c=>c.r===row);
+
+  },
+
+  'Line (vertical)': () => {
+
+    const col = Math.floor(Math.random()*5);
+
+    return cells.filter(c=>c.c===col);
+
+  },
+
+  'Line (diagonal \\)': () => cells.filter(c=>c.r===c.c),
+
+  'Line (diagonal /)': () => cells.filter(c=>c.r + c.c === 4),
+
+  'Four Corners': () => cells.filter(c=>(c.r===0||c.r===4)&&(c.c===0||c.c===4)),
+
+  'X Pattern': () => cells.filter(c=> (c.r===c.c) || (c.r + c.c === 4) ),
+
+  'T Pattern (top)': () => cells.filter(c=> c.r===0 || c.c===2),
+
+  'T Pattern (bottom)': () => cells.filter(c=> c.r===4 || c.c===2),
+
+  'L Pattern (bottom-left)': () => cells.filter(c=> c.c===0 || c.r===4),
+
+  'L Pattern (bottom-right)': () => cells.filter(c=> c.c===4 || c.r===4),
+
+  'Box (outer)': () => cells.filter(c=> c.r===0 || c.r===4 || c.c===0 || c.c===4),
+
+  'Box (inner 3x3)': () => cells.filter(c=> c.r>=1 && c.r<=3 && c.c>=1 && c.c<=3),
+
+  'Full House': () => cells.slice() // all cells
+
+};
+
+/* allowed pattern keys we will choose from (only ones requested, with small variations for lines and L/T/Box) */
+
+const PATTERN_KEYS = [
+
+  'Line (horizontal)',
+
+  'Line (vertical)',
+
+  'Line (diagonal \\)',
+
+  'Line (diagonal /)',
+
+  'Four Corners',
+
+  'X Pattern',
+
+  'T Pattern (top)',
+
+  'T Pattern (bottom)',
+
+  'L Pattern (bottom-left)',
+
+  'L Pattern (bottom-right)',
+
+  'Box (outer)',
+
+  'Box (inner 3x3)',
+
+  'Full House'
+
+];
+
+function randomizePattern(){
+
+  // Clear all cells first
+
+  cells.forEach(c=>c.el.classList.remove('active'));
+
+  // Always highlight FREE center
+
+  cells.find(c=>c.r===2 && c.c===2).el.classList.add('active');
+
+  // pick one pattern
+
+  const key = PATTERN_KEYS[Math.floor(Math.random()*PATTERN_KEYS.length)];
+
+  const coords = PATTERNS[key]();
+
+  // ensure FREE center remains (it may be included already)
+
+  coords.forEach(c=>c.el.classList.add('active'));
+
+  // update pattern name display (shorten names slightly)
+
+  let displayName = key;
+
+  if(displayName.startsWith('Line (')) displayName = 'Line — ' + displayName.replace('Line (','').replace(')','');
+
+  patternNameEl.textContent = displayName;
+
+}
+
+/* initialize */
+
+randomizePattern();
+
+renderHistory();
+
+/* events */
+
+rollBtn.addEventListener('click', rollRandom);
+
+revealBtn.addEventListener('click', revealAnswer);
+
+resetBtn.addEventListener('click', resetUsed);
+
+patternBtn.addEventListener('click', randomizePattern);
+
+</script>
+
+</body>
+
+</html>
