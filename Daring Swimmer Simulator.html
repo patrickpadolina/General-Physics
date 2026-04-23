@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Daring Swimmer Simulator by Sir Patrick Padolina</title>
+  <style>
+    body {
+      background: #cceeff;
+      overflow-x: hidden;
+      font-family: sans-serif;
+    }
+    #scene {
+      position: relative;
+      width: 100%;
+      height: 500px;
+      border-bottom: 5px solid #0077aa;
+    }
+    .cliff {
+      position: absolute;
+      bottom: 60px;
+      left: 50px;
+      width: 80px;
+      height: 300px;
+      background: #8b5e3c;
+    }
+    .ledge {
+      position: absolute;
+      bottom: 60px;
+      left: 130px;
+      width: 70px;
+      height: 60px;
+      background: #66cc66;
+    }
+    .pool {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background: #3399ff;
+    }
+    .swimmer {
+      position: absolute;
+      width: 20px;
+      height: 60px;
+    }
+    .stickman {
+      position: absolute;
+      width: 20px;
+      height: 60px;
+      transition: transform 0.3s ease;
+    }
+    .head {
+      width: 20px;
+      height: 20px;
+      background: #ff3366;
+      border-radius: 50%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .body {
+      width: 2px;
+      height: 25px;
+      background: black;
+      position: absolute;
+      top: 20px;
+      left: 9px;
+    }
+    .arm {
+      width: 20px;
+      height: 2px;
+      background: black;
+      position: absolute;
+      top: 25px;
+      left: 0;
+    }
+    .leg-left, .leg-right {
+      width: 2px;
+      height: 15px;
+      background: black;
+      position: absolute;
+      top: 45px;
+    }
+    .leg-left {
+      left: 6px;
+    }
+    .leg-right {
+      left: 12px;
+    }
+    #controls {
+      text-align: center;
+      margin-top: 20px;
+    }
+    #question {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 10px;
+      background: #ffffffcc;
+      border: 2px solid #0077aa;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    #resultX {
+      position: absolute;
+      font-size: 48px;
+      color: red;
+      left: 140px;
+      bottom: 130px;
+      display: none;
+      font-weight: bold;
+    }
+    .fallen {
+      transform: rotate(90deg);
+      transform-origin: top left;
+    }
+    .diving {
+      animation: divingRotate 0.6s infinite linear;
+    }
+    @keyframes divingRotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(20deg); }
+    }
+    .splash {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      background: radial-gradient(circle, #fff 0%, #3399ff 70%);
+      border-radius: 50%;
+      bottom: 60px;
+      left: 0;
+      display: none;
+      animation: splashAnim 0.6s ease-out forwards;
+    }
+    @keyframes splashAnim {
+      0% { transform: scale(0); opacity: 1; }
+      100% { transform: scale(2); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <h2 style="text-align:center;">🏊‍♀️ Daring Swimmer Simulator by Sir Patrick Padolina</h2>
+  <div id="question">
+    <strong>Problem:</strong> A daring 510-N swimmer dives off a cliff with a running horizontal leap. What must her minimum speed be just as she leaves the top of the cliff so that she will miss the ledge at the bottom, which is 3.24 m wide and 9.00 m below the top of the cliff? (Express in 1 decimal place)
+  </div>
+  <div id="scene">
+    <div class="pool"></div>
+    <div class="cliff"></div>
+    <div class="ledge"></div>
+    <div class="swimmer" id="swimmer">
+      <div class="stickman">
+        <div class="head"></div>
+        <div class="body"></div>
+        <div class="arm"></div>
+        <div class="leg-left"></div>
+        <div class="leg-right"></div>
+      </div>
+    </div>
+    <div id="resultX">X</div>
+    <div class="splash" id="splash"></div>
+  </div>
+  <div id="controls">
+    <label for="vxInput">Set horizontal velocity (m/s): </label>
+    <input type="number" id="vxInput" value="1.0" step="0.01" min="0">
+    <button onclick="startAnimation()">Start</button>
+  </div>
+
+  <script>
+    const swimmer = document.getElementById('swimmer');
+    const vxInput = document.getElementById('vxInput');
+    const resultX = document.getElementById('resultX');
+    const splash = document.getElementById('splash');
+
+    const g = 9.8;
+    const h = 9.0;
+    const scale = 40;
+    const ledgeStartPx = 130;
+    const ledgeStart = ledgeStartPx - 80;
+    const ledgeWidth = 70;
+    const swimmerWidth = 20;
+
+    const ledgeStartMeters = ledgeStart / scale;
+    const ledgeEndMeters = (ledgeStart + ledgeWidth) / scale;
+
+    let animationId;
+
+    function startAnimation() {
+      cancelAnimationFrame(animationId);
+      resultX.style.display = 'none';
+      splash.style.display = 'none';
+
+      const stickman = swimmer.querySelector('.stickman');
+      stickman.classList.remove('fallen');
+      stickman.classList.remove('diving');
+      stickman.classList.add('diving');
+
+      const vx = parseFloat(vxInput.value);
+      const tFall = Math.sqrt(2 * h / g);
+      const xFinal = vx * tFall;
+      const swimmerCenterOffset = (swimmerWidth / 2) / scale;
+      const swimmerLeftEdge = xFinal - swimmerCenterOffset;
+      const swimmerRightEdge = xFinal + swimmerCenterOffset;
+
+      let t = 0;
+      const dt = 0.02;
+
+      function animate() {
+        t += dt;
+        const x = vx * t;
+        const y = 0.5 * g * t * t;
+
+        swimmer.style.left = `${80 + (x - swimmerCenterOffset) * scale}px`;
+        swimmer.style.bottom = `${360 - y * scale}px`;
+
+        if (t < tFall) {
+          animationId = requestAnimationFrame(animate);
+        } else {
+          stickman.classList.remove('diving');
+
+          if (swimmerLeftEdge < ledgeEndMeters) {
+            // Hit the ledge: position flat exactly on top
+            resultX.style.display = 'block';
+            stickman.classList.add('fallen');
+            swimmer.style.left = `${ledgeStartPx}px`;
+            swimmer.style.bottom = `120px`; // 60px pool + 60px ledge
+          } else {
+            // Landed in the pool
+            const splashX = 80 + (xFinal - swimmerCenterOffset) * scale;
+            splash.style.left = `${splashX}px`;
+            splash.style.display = 'block';
+          }
+        }
+      }
+
+      swimmer.style.left = '80px';
+      swimmer.style.bottom = '360px';
+
+      animate();
+    }
+  </script>
+</body>
+</html>
