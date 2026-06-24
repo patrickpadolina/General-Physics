@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soccer Ball Projectile Simulation - Enhanced Vectors</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a24;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 850px;
+            background-color: #252538;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: #4dabf7;
+        }
+        p {
+            color: #a5a5b1;
+            margin-bottom: 20px;
+            font-size: 1rem;
+        }
+        .simulation-canvas {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(to bottom, #0f172a, #1e293b);
+            border: 2px solid #334155;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        .trajectory-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 40px;
+            background-color: #059669;
+            border-top: 4px solid #10b981;
+            z-index: 8;
+        }
+        .soccer-ball {
+            width: 32px;
+            height: 32px;
+            background: radial-gradient(circle at 30% 30%, #ffffff, #94a3b8, #000000);
+            border-radius: 50%;
+            position: absolute;
+            bottom: 40px;
+            left: 50px;
+            transform: translate(-50%, 50%);
+            z-index: 10;
+        }
+        .soccer-ball::before {
+            content: "⚽";
+            position: absolute;
+            top: -2px;
+            left: -1px;
+            font-size: 32px;
+            line-height: 1;
+        }
+        /* ENHANCED VECTOR GRAPHICS (Thicker lines, larger heads) */
+        .vector-wrapper {
+            position: absolute;
+            display: none;
+            z-index: 9;
+            pointer-events: none;
+        }
+        .vector-arrow {
+            position: absolute;
+            height: 8px; /* Increased from 4px to 8px for higher visibility */
+            transform-origin: left center;
+            border-radius: 4px;
+        }
+        .vector-arrow::after {
+            content: '';
+            position: absolute;
+            right: -14px; /* Scaled out to match larger arrow tip size */
+            top: -5px;    /* Centered offset adjustment for 8px thickness */
+            border: 9px solid transparent; /* Increased tip volume */
+        }
+        .vx-vector {
+            background-color: #f43f5e;
+        }
+        .vx-vector::after {
+            border-left-color: #f43f5e;
+        }
+        .vy-vector {
+            background-color: #38bdf8;
+        }
+        .vy-vector::after {
+            border-left-color: #38bdf8;
+        }
+        .vector-label {
+            position: absolute;
+            font-size: 0.9rem; /* Slightly enhanced text scale */
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .vx-label {
+            color: #ffffff;
+            background-color: #f43f5e;
+        }
+        .vy-label {
+            color: #ffffff;
+            background-color: #38bdf8;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        button {
+            background-color: #3b82f6;
+            color: #ffffff;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        button:hover {
+            background-color: #2563eb;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .color-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Soccer Ball Projectile</h1>
+ 
+    <div class="simulation-canvas" id="canvas">
+        <svg class="trajectory-svg">
+            <path id="trajectoryPath" d="" fill="none" stroke="#e2e8f0" stroke-width="3" stroke-dasharray="6,6" opacity="0.6"/>
+        </svg>
+
+        <div class="soccer-ball" id="ball"></div>
+        
+        <div class="vector-wrapper" id="vxWrapper">
+            <div class="vector-arrow vx-vector" id="vxArrow"></div>
+            <div class="vector-label vx-label" id="vxLabel">v<sub>x</sub></div>
+        </div>
+        
+        <div class="vector-wrapper" id="vyWrapper">
+            <div class="vector-arrow vy-vector" id="vyArrow"></div>
+            <div class="vector-label vy-label" id="vyLabel">v<sub>y</sub></div>
+        </div>
+
+        <div class="ground"></div>
+    </div>
+
+    <div class="controls">
+        <button onclick="startSimulation()">Kick Soccer Ball</button>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="color-box" style="background-color: #f43f5e;"></div>
+            <span>v<sub>x</sub> (Horizontal Component)</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: #38bdf8;"></div>
+            <span>v<sub>y</sub> (Vertical Component)</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ball = document.getElementById('ball');
+    const vxWrapper = document.getElementById('vxWrapper');
+    const vyWrapper = document.getElementById('vyWrapper');
+    const vxArrow = document.getElementById('vxArrow');
+    const vyArrow = document.getElementById('vyArrow');
+    const vxLabel = document.getElementById('vxLabel');
+    const vyLabel = document.getElementById('vyLabel');
+    const trajectoryPath = document.getElementById('trajectoryPath');
+    const canvas = document.getElementById('canvas');
+
+    let animationId = null;
+    let isRunning = false;
+
+    const startX = 50;
+    const groundLevel = 40; 
+    const gravity = 200;    
+
+    function startSimulation() {
+        if (isRunning) {
+            cancelAnimationFrame(animationId);
+        }
+        isRunning = true;
+
+        const v_ix = 210;  
+        const v_iy = 280;  
+
+        const startTime = performance.now();
+        let pathString = ""; 
+
+        function step(now) {
+            let t = (now - startTime) / 1000; 
+
+            let currentX = startX + (v_ix * t);
+            let currentY = groundLevel + (v_iy * t) - (0.5 * gravity * t * t);
+            let currentVy = v_iy - (gravity * t);
+
+            const ballX = currentX;
+            const ballY = canvas.clientHeight - currentY;
+
+            if (t === 0 || pathString === "") {
+                pathString = `M ${ballX} ${ballY}`;
+            } else {
+                pathString += ` L ${ballX} ${ballY}`;
+            }
+            trajectoryPath.setAttribute('d', pathString);
+
+            if (currentY <= groundLevel && t > 0.1) {
+                ball.style.left = `${startX}px`;
+                ball.style.bottom = `${groundLevel}px`;
+                vxWrapper.style.display = 'none';
+                vyWrapper.style.display = 'none';
+                isRunning = false;
+                return;
+            }
+
+            ball.style.left = `${currentX}px`;
+            ball.style.bottom = `${currentY}px`;
+
+            // 1. Horizontal Vector Layout ($v_x$)
+            vxWrapper.style.display = 'block';
+            vxWrapper.style.left = `${ballX}px`;
+            vxWrapper.style.top = `${ballY}px`;
+            
+            const vxWidth = v_ix * 0.45; // slightly increased scaling length
+            vxArrow.style.width = `${vxWidth}px`;
+            vxArrow.style.transform = 'rotate(0deg)';
+            
+            vxLabel.style.left = `${vxWidth / 2 - 12}px`;
+            vxLabel.style.top = `-26px`;
+
+            // 2. Vertical Vector Layout ($v_y$)
+            vyWrapper.style.display = 'block';
+            vyWrapper.style.left = `${ballX}px`;
+            vyWrapper.style.top = `${ballY}px`;
+            
+            const vyLength = Math.abs(currentVy) * 0.45;
+            vyArrow.style.width = `${vyLength}px`;
+            
+            if (currentVy >= 0) {
+                vyArrow.style.transform = 'rotate(-90deg)'; 
+                vyLabel.style.left = `-45px`;
+                vyLabel.style.top = `-${vyLength + 14}px`;
+            } else {
+                vyArrow.style.transform = 'rotate(90deg)';  
+                vyLabel.style.left = `-45px`;
+                vyLabel.style.top = `${vyLength + 14}px`;
+            }
+
+            animationId = requestAnimationFrame(step);
+        }
+
+        trajectoryPath.setAttribute('d', '');
+        animationId = requestAnimationFrame(step);
+    }
+    
+    ball.style.left = `${startX}px`;
+    ball.style.bottom = `${groundLevel}px`;
+    vxWrapper.style.display = 'none';
+    vyWrapper.style.display = 'none';
+</script>
+
+</body>
+</html>
