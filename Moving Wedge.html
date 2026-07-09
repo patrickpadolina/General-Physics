@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wedge Ramp & Box Qualitative Visualizer</title>
+    <style>
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
+            background-color: #eef7e8; 
+            background-image: radial-gradient(#d4ebd0 20%, transparent 20%), radial-gradient(#d4ebd0 20%, transparent 20%);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+            margin: 0;
+            padding: 20px;
+            color: #543d2b;
+        }
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background: #fdf6e2; 
+            padding: 30px;
+            border-radius: 30px;
+            box-shadow: 0 8px 0px #c2b69d, 0 15px 20px rgba(0,0,0,0.08);
+            border: 5px solid #6b4c35;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 0;
+            color: #4a7c59;
+            font-size: 2.2rem;
+            text-shadow: 2px 2px 0px #fff;
+        }
+        .problem-card {
+            background: #fffbef;
+            padding: 20px;
+            border-radius: 20px;
+            border: 3px dashed #bfa38a;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            line-height: 1.5;
+            text-align: center;
+        }
+        .dashboard {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f0e3ce;
+            padding: 15px;
+            border-radius: 20px;
+            border: 2px solid #baab93;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+        .btn-push {
+            color: white;
+            font-family: inherit;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+        }
+        .btn-hard {
+            background: #d63031;
+            box-shadow: 0 4px 0 #b2bec3;
+            text-shadow: 1px 1px 0px #761c1c;
+            box-shadow: 0 4px 0 #811e1e;
+        }
+        .btn-hard:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #811e1e;
+        }
+        .btn-weak {
+            background: #fdcb6e;
+            color: #543d2b;
+            text-shadow: 1px 1px 0px #fffbf0;
+            box-shadow: 0 4px 0 #c59b4e;
+        }
+        .btn-weak:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #c59b4e;
+        }
+        canvas {
+            width: 100%;
+            background: #ffffff;
+            border: 4px solid #6b4c35;
+            border-radius: 20px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+        .canvas-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #6b4c35;
+            color: #fdf6e2;
+            padding: 8px 20px;
+            border-radius: 12px 12px 0 0;
+            font-weight: bold;
+            margin-bottom: -4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🍃 Wedge & Box Scenario Visualizer 🍃</h1>
+    
+    <div class="problem-card">
+        <strong>The Physics Principle:</strong> When you push the ramp horizontally, its inertia changes how the box behaves. 
+        Select a strategy below to see what happens to the box under different magnitudes of force!
+    </div>
+
+    <div class="dashboard">
+        <button class="btn-push btn-hard" onclick="triggerPush(1)">PUSH HARD! 🚀</button>
+        <button class="btn-push btn-weak" onclick="triggerPush(-1)">PUSH WEAK! 🐢</button>
+    </div>
+
+    <div>
+        <div class="canvas-header">
+            <span>Real Situation View</span>
+            <span id="statusLabel" style="color: #ffeaa7;">Status: Awaiting Action</span>
+        </div>
+        <canvas id="realCanvas" width="800" height="460"></canvas>
+    </div>
+</div>
+
+<script>
+    const realCanvas = document.getElementById('realCanvas');
+    const realCtx = realCanvas.getContext('2d');
+
+    const theta = 30 * Math.PI / 180; 
+    let isAnimating = false;
+    let animProgress = 0; 
+    let slideDirection = 0; // 1 = Up, -1 = Down
+
+    function drawArrow(ctx, fromX, fromY, toX, toY, color, label) {
+        const headLength = 14; 
+        const angle = Math.atan2(toY - fromY, toX - fromX);
+        
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 4;
+        ctx.lineCap = "round";
+
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        ctx.lineTo(toX, toY);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(toX, toY);
+        ctx.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6), toY - headLength * Math.sin(angle + Math.PI / 6));
+        ctx.fill();
+
+        ctx.font = "bold 14px 'Arial Rounded MT Bold', sans-serif";
+        ctx.fillStyle = "#543d2b";
+        ctx.fillText(label, toX + 8, toY - 8);
+    }
+
+    function render() {
+        realCtx.clearRect(0, 0, realCanvas.width, realCanvas.height);
+
+        // Map horizontal ramp movement based on progress
+        let rampXOffset = -180 * animProgress; 
+        
+        // Define slide amounts based on chosen magnitude direction
+        let boxUpSlope = 0;
+        if (slideDirection === 1) {
+            boxUpSlope = 140 * animProgress; // Slides up
+        } else if (slideDirection === -1) {
+            boxUpSlope = -110 * animProgress; // Slides down
+        }
+
+        // --- DRAW GROUND ---
+        const groundY = 380;
+        realCtx.fillStyle = '#8bc34a'; 
+        realCtx.fillRect(0, groundY, realCanvas.width, realCanvas.height - groundY);
+        realCtx.strokeStyle = '#558b2f';
+        realCtx.lineWidth = 5;
+        realCtx.beginPath(); realCtx.moveTo(0, groundY); realCtx.lineTo(realCanvas.width, groundY); realCtx.stroke();
+
+        // --- DRAW WEDGE RAMP ---
+        const wedgeWidth = 440;
+        const wedgeHeight = wedgeWidth * Math.tan(theta);
+        const wedgeRightX = 660 + rampXOffset;
+        const wedgeLeftX = wedgeRightX - wedgeWidth;
+        const wedgeTopY = groundY - wedgeHeight;
+
+        realCtx.fillStyle = '#e5c298'; 
+        realCtx.strokeStyle = '#6b4c35';
+        realCtx.lineWidth = 4;
+        realCtx.beginPath();
+        realCtx.moveTo(wedgeLeftX, groundY);
+        realCtx.lineTo(wedgeRightX, groundY);
+        realCtx.lineTo(wedgeRightX, wedgeTopY);
+        realCtx.closePath();
+        realCtx.fill();
+        realCtx.stroke();
+        
+        realCtx.font = "bold 15px 'Arial Rounded MT Bold', sans-serif";
+        realCtx.fillStyle = "#6b4c35";
+        realCtx.fillText("Ramp (M)", wedgeRightX - 100, groundY - 35);
+
+        // Angle Arc
+        realCtx.beginPath();
+        realCtx.arc(wedgeLeftX, groundY, 60, 0, -theta, true);
+        realCtx.strokeStyle = '#6b4c35';
+        realCtx.lineWidth = 2;
+        realCtx.stroke();
+        realCtx.fillText("θ = 30°", wedgeLeftX + 70, groundY - 18);
+
+        // --- DRAW BOX ---
+        const midX = (wedgeLeftX + wedgeRightX) / 2;
+        const midY = (groundY + wedgeTopY) / 2;
+
+        realCtx.save();
+        const currentBoxX = midX + boxUpSlope * Math.cos(theta);
+        const currentBoxY = midY - boxUpSlope * Math.sin(theta);
+        realCtx.translate(currentBoxX, currentBoxY);
+        realCtx.rotate(-theta);
+        
+        realCtx.fillStyle = '#d7a15c'; 
+        realCtx.fillRect(-35, -35, 70, 35);
+        realCtx.strokeStyle = '#543d2b';
+        realCtx.lineWidth = 3;
+        realCtx.strokeRect(-35, -35, 70, 35);
+        realCtx.beginPath(); 
+        realCtx.moveTo(-26, -30); realCtx.lineTo(26, -5);
+        realCtx.moveTo(26, -30); realCtx.lineTo(-26, -5);
+        realCtx.stroke();
+        
+        realCtx.font = "bold 16px 'Arial Rounded MT Bold', sans-serif";
+        realCtx.fillStyle = "#543d2b";
+        realCtx.fillText("m", -6, -42);
+        realCtx.restore();
+
+        // --- DRAW FORCE ARROW (Arrow size updates contextually) ---
+        const forceArrowStartX = wedgeRightX + (slideDirection === 1 ? 130 : 70);
+        const forceLabel = slideDirection === 1 ? "F (Large Force)" : (slideDirection === -1 ? "F (Small Force)" : "F (Applied Force)");
+        const forceColor = slideDirection === 1 ? '#d63031' : '#e58e26';
+        drawArrow(realCtx, forceArrowStartX, groundY - 80, wedgeRightX, groundY - 80, forceColor, forceLabel);
+    }
+
+    function triggerPush(direction) {
+        if (isAnimating) return;
+
+        slideDirection = direction;
+        const statusLabel = document.getElementById('statusLabel');
+
+        if (direction === 1) {
+            statusLabel.innerText = "Status: Large push! Box slides UP 📈";
+            statusLabel.style.color = "#55efc4";
+        } else {
+            statusLabel.innerText = "Status: Weak push! Box slides DOWN 📉";
+            statusLabel.style.color = "#ff7675";
+        }
+
+        animProgress = 0;
+        isAnimating = true;
+        requestAnimationFrame(animationLoop);
+    }
+
+    function animationLoop() {
+        if (!isAnimating) return;
+        animProgress += 0.006; 
+        
+        if (animProgress >= 1) {
+            animProgress = 1;
+            isAnimating = false;
+        }
+
+        render();
+
+        if (isAnimating) {
+            requestAnimationFrame(animationLoop);
+        }
+    }
+
+    // Initial canvas setup
+    render();
+</script>
+
+</body>
+</html>
