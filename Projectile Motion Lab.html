@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GBA Projectile Motion Lab</title>
+    <!-- Tailwind CSS for layout utility -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- MathJax for rendering physics equations -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        /* Prevent scrollbars at the root level */
+        html, body {
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            margin: 0;
+            padding: 0;
+        }
+        .ruler-transition {
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes ripple {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(3.5); opacity: 0; }
+        }
+        .impact-ripple {
+            animation: ripple 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+        }
+        .retro-text {
+            font-family: 'Courier New', Courier, monospace;
+        }
+        /* Classic 16-bit text shadow for UI elements */
+        .pixel-shadow {
+            text-shadow: 1px 1px 0px #1a2d1b;
+        }
+        /* Flashing effect for start screen button */
+        @keyframes custom-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(0.97); }
+        }
+        .start-btn-pulse {
+            animation: custom-pulse 1.8s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 h-screen w-screen flex items-center justify-center p-2 md:p-4 select-none">
+
+    <!-- GAME BOY ADVANCE CONSOLE BEZEL FRAME (Sized to fit viewport perfectly) -->
+    <div class="relative w-full max-w-[800px] h-full max-h-[92vh] aspect-[4/3] bg-gradient-to-b from-zinc-800 to-zinc-900 rounded-[36px] p-4 md:p-5 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95),inset_0_4px_10px_rgba(255,255,255,0.15)] border-4 border-zinc-950 flex flex-col justify-between overflow-hidden">
+        
+        <!-- Screen Glass Label -->
+        <div class="w-full flex justify-between items-center px-4 py-1 text-zinc-500 font-bold text-xs tracking-widest border-b border-zinc-900/60 mb-1.5 shrink-0">
+            <span class="text-emerald-500 font-black flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>POWER</span>
+            <span class="text-zinc-400 italic font-black">PHYSICS LAB ADVANCE</span>
+        </div>
+
+        <!-- THE GBA SCREEN -->
+        <div class="relative flex-1 bg-[#101c15] rounded-lg overflow-hidden border-4 border-zinc-950 flex flex-col shadow-inner">
+            
+            <!-- Scanline retro screen overlay effect -->
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-transparent pointer-events-none z-20" style="background-size: 100% 4px;"></div>
+
+            <!-- ==================== FRONT START SCREEN OVERLAY ==================== -->
+            <div id="start-screen" class="absolute inset-0 bg-[#0e1912] z-30 flex flex-col justify-between p-6 retro-text border-2 border-[#203a27] rounded-md transition-all duration-700">
+                <div class="flex justify-between items-start text-emerald-500 text-[10px] opacity-75">
+                    <span>DLSZ OS v1.0.26</span>
+                    <span>SYSTEM RUNNING OK</span>
+                </div>
+
+                <div class="flex flex-col items-center my-auto text-center">
+                    <!-- Title Graphic -->
+                    <div class="text-[#f8fcf0] font-black tracking-widest text-lg md:text-2xl mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                        DLSZ PHYSICS LAB
+                    </div>
+                    <div class="text-[#88a080] font-bold tracking-wider text-xs md:text-sm uppercase mb-6 border-b-2 border-[#487858] pb-1.5 px-6">
+                        Projectile Motion Lab
+                    </div>
+
+                    <!-- RUN Button styled like classic GBA Game Title Start prompt -->
+                    <button onclick="startLab()" class="start-btn-pulse bg-[#588d67] hover:bg-[#6ba07a] active:bg-[#436e4f] text-[#f8fcf0] font-black text-sm md:text-base px-8 py-3.5 rounded-xl border-2 border-[#88a080] shadow-[0_5px_0px_#2b4c38] hover:shadow-[0_4px_0px_#2b4c38] active:shadow-none active:translate-y-[5px] cursor-pointer transition-all duration-100 flex items-center gap-3">
+                        <span class="inline-block w-3.5 h-3.5 rounded-full bg-emerald-300 animate-ping"></span>
+                        RUN SYSTEM
+                    </button>
+                </div>
+
+                <div class="text-center text-[#4a6350] text-[9px]">
+                    © 2026 DLSZ PHYSICS LAB. ALL RIGHTS RESERVED.
+                </div>
+            </div>
+
+            <!-- SVG Lab Space (DLSZ Physics Lab Theme) -->
+            <div class="flex-1 relative bg-[#1c2e24] flex items-center justify-center p-2">
+                <svg viewBox="0 0 800 340" class="w-full h-auto drop-shadow-[0_6px_12px_rgba(0,0,0,0.7)]" id="game-screen">
+                    <defs>
+                        <!-- Retro Pokémon Laboratory Gradients -->
+                        <linearGradient id="dlsz-wall" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#4e6f5c" />
+                            <stop offset="60%" stop-color="#2c4236" />
+                            <stop offset="100%" stop-color="#19261f" />
+                        </linearGradient>
+                        <linearGradient id="heavy-metal" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#99aab8" />
+                            <stop offset="50%" stop-color="#647687" />
+                            <stop offset="100%" stop-color="#3b4854" />
+                        </linearGradient>
+                        <linearGradient id="laser-beam" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#ef4444" stop-opacity="0.9"/>
+                            <stop offset="100%" stop-color="#ef4444" stop-opacity="0.1"/>
+                        </linearGradient>
+                        <linearGradient id="desk-steel" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#8093a6" />
+                            <stop offset="15%" stop-color="#55697d" />
+                            <stop offset="100%" stop-color="#2f3d4a" />
+                        </linearGradient>
+                        <linearGradient id="floor-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#2e3830" />
+                            <stop offset="100%" stop-color="#141a15" />
+                        </linearGradient>
+                        <linearGradient id="ruler-energy" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#10b981" />
+                            <stop offset="100%" stop-color="#34d399" />
+                        </linearGradient>
+
+                        <!-- Pattern for DLSZ Physics Lab floor tiles -->
+                        <pattern id="lab-tiles" width="40" height="40" patternUnits="userSpaceOnUse">
+                            <rect width="40" height="40" fill="none" stroke="#252f27" stroke-width="1.5" />
+                            <rect x="2" y="2" width="36" height="36" fill="#2d3b30" opacity="0.15" />
+                        </pattern>
+                    </defs>
+
+                    <!-- Wall Panels -->
+                    <rect x="0" y="0" width="800" height="300" fill="url(#dlsz-wall)" />
+                    
+                    <!-- Rivets & Panel seams on the background wall -->
+                    <g stroke="#16231c" stroke-width="2" opacity="0.5">
+                        <line x1="0" y1="100" x2="800" y2="100" />
+                        <line x1="0" y1="200" x2="800" y2="200" />
+                        <line x1="200" y1="0" x2="200" y2="300" />
+                        <line x1="400" y1="0" x2="400" y2="300" />
+                        <line x1="600" y1="0" x2="600" y2="300" />
+                    </g>
+                    <!-- Small retro wall terminal background -->
+                    <rect x="25" y="25" width="40" height="30" fill="#141a15" stroke="#4a5d50" stroke-width="2" rx="3" />
+                    <circle cx="35" cy="35" r="2" fill="#ef4444" class="animate-pulse" />
+                    <line x1="42" y1="35" x2="55" y2="35" stroke="#10b981" stroke-width="1.5" stroke-dasharray="2 1" />
+
+                    <!-- Laboratory Tiled Floor Base -->
+                    <rect x="0" y="300" width="800" height="40" fill="url(#floor-grad)" />
+                    <rect x="0" y="300" width="800" height="40" fill="url(#lab-tiles)" />
+                    <line x1="0" y1="300" x2="800" y2="300" stroke="#3d4e41" stroke-width="6" />
+
+                    <!-- ==================== WORLD OBJECTS ==================== -->
+                    
+                    <!-- Table Shadows -->
+                    <rect x="15" y="300" width="220" height="15" fill="#0d1410" opacity="0.7" rx="6" />
+
+                    <!-- Heavy DLSZ Physics Lab Console Table -->
+                    <rect x="35" y="177" width="18" height="123" fill="url(#heavy-metal)" stroke="#111822" stroke-width="2" />
+                    <rect x="185" y="177" width="18" height="123" fill="url(#heavy-metal)" stroke="#111822" stroke-width="2" />
+                    <line x1="53" y1="200" x2="185" y2="270" stroke="#2a3540" stroke-width="4" />
+                    
+                    <!-- Main Metallic Table Surface -->
+                    <rect x="10" y="165" width="230" height="12" fill="url(#desk-steel)" rx="2" stroke="#1a242f" stroke-width="2" />
+                    <!-- Hazard Stripes on the Table Rim -->
+                    <g opacity="0.8">
+                        <line x1="15" y1="171" x2="25" y2="171" stroke="#fbbf24" stroke-width="8" stroke-dasharray="4 4" />
+                        <line x1="115" y1="171" x2="125" y2="171" stroke="#fbbf24" stroke-width="8" stroke-dasharray="4 4" />
+                        <line x1="215" y1="171" x2="225" y2="171" stroke="#fbbf24" stroke-width="8" stroke-dasharray="4 4" />
+                    </g>
+
+                    <!-- Sleek Clean Metallic Launcher Ramp (Ends exactly at table edge x = 240) -->
+                    <rect x="85" y="115" width="12" height="50" fill="url(#heavy-metal)" stroke="#111822" stroke-width="1.5" />
+                    <circle cx="91" cy="125" r="2" fill="#111822" />
+                    
+                    <!-- Main Steel Track -->
+                    <path d="M 100 40 Q 140 165 240 165" fill="none" stroke="url(#heavy-metal)" stroke-width="12" stroke-linecap="round" />
+                    <path d="M 100 40 Q 140 165 240 165" fill="none" stroke="#161c22" stroke-width="1.5" stroke-linecap="round" />
+                    
+                    <!-- Internal Track Rail Line -->
+                    <path d="M 102 44 Q 138 161 230 161" fill="none" stroke="#22d3ee" stroke-width="2" stroke-dasharray="6 3" opacity="0.9" />
+                    
+                    <!-- Laser-Drop Plumb Line from table edge -->
+                    <line x1="240" y1="165" x2="240" y2="300" stroke="url(#laser-beam)" stroke-width="2.5" />
+                    
+                    <!-- Plumb Target Sensor on the floor -->
+                    <g transform="translate(240, 296)">
+                        <polygon points="-6,0 6,0 0,7" fill="#ef4444" />
+                        <circle cx="0" cy="0" r="2.5" fill="#ffffff" stroke="#111822" stroke-width="0.5" />
+                    </g>
+
+                    <!-- Holographic Target Grid (Landing Field Zone) -->
+                    <rect x="460" y="297" width="220" height="3" fill="#06b6d4" opacity="0.4" />
+                    <line x1="460" y1="297" x2="680" y2="297" stroke="#22d3ee" stroke-width="2" />
+                    
+                    <!-- Target Grid ticks -->
+                    <line x1="460" y1="294" x2="460" y2="297" stroke="#22d3ee" stroke-width="1.5" />
+                    <line x1="570" y1="294" x2="570" y2="297" stroke="#22d3ee" stroke-width="1.5" />
+                    <line x1="680" y1="294" x2="680" y2="297" stroke="#22d3ee" stroke-width="1.5" />
+
+                    <!-- Parabolic Path Estimation Guideline -->
+                    <path id="trajectory-line" d="M 240 165 Q 360 165 565 297" fill="none" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="4 6" opacity="0.3" />
+
+                    <!-- Landing marks collection -->
+                    <g id="impact-marks"></g>
+
+                    <!-- Capture Impact Ripple Ring -->
+                    <circle id="ripple-circle" cx="0" cy="0" r="1" fill="none" stroke="#22d3ee" stroke-width="3" opacity="0" />
+
+                    <!-- BALL PROJECTILE (Sleek Retro Poké Ball) -->
+                    <g id="steel-ball" transform="translate(100, 40)">
+                        <!-- Ball drop shadow -->
+                        <circle cx="0" cy="1" r="7.5" fill="#0c120e" opacity="0.4" />
+                        <!-- Upper Red Dome -->
+                        <path d="M -7 0 A 7 7 0 0 1 7 0 Z" fill="#ef4444" />
+                        <ellipse cx="-2.5" cy="-3.5" rx="2" ry="1" fill="#ffffff" opacity="0.6" transform="rotate(-15)" />
+                        <!-- Bottom White Dome -->
+                        <path d="M -7 0 A 7 7 0 0 0 7 0 Z" fill="#e5e7eb" />
+                        <!-- Middle black belt -->
+                        <line x1="-7" y1="0" x2="7" y2="0" stroke="#111827" stroke-width="1.5" />
+                        <!-- Center Release Button -->
+                        <circle cx="0" cy="0" r="2.5" fill="#111827" />
+                        <circle cx="0" cy="0" r="1.2" fill="#ffffff" />
+                    </g>
+
+                    <!-- ==================== HUD INTERACTIVE RULERS ==================== -->
+                    <!-- RAMP HEIGHT RULER (h) -->
+                    <g id="ruler-h" class="ruler-transition" opacity="0" style="pointer-events: none;">
+                        <rect x="45" y="40" width="10" height="125" fill="url(#ruler-energy)" rx="2" opacity="0.8" />
+                        <g stroke="#ffffff" stroke-width="1.2">
+                            <line x1="45" y1="40" x2="55" y2="40" />
+                            <line x1="45" y1="102.5" x2="51" y2="102.5" />
+                            <line x1="45" y1="165" x2="55" y2="165" />
+                        </g>
+                    </g>
+
+                    <!-- TABLE VERTICAL DROP RULER (y) (POSITIONED BESIDE THE TABLE AT x=248) -->
+                    <g id="ruler-y" class="ruler-transition" opacity="0" style="pointer-events: none;">
+                        <rect x="248" y="165" width="10" height="135" fill="url(#ruler-energy)" rx="2" opacity="0.8" />
+                        <g stroke="#ffffff" stroke-width="1.2">
+                            <line x1="248" y1="165" x2="258" y2="165" />
+                            <line x1="248" y1="232.5" x2="254" y2="232.5" />
+                            <line x1="248" y1="300" x2="258" y2="300" />
+                        </g>
+                    </g>
+
+                    <!-- FLOOR RANGE RULER (R) -->
+                    <g id="ruler-R" class="ruler-transition" opacity="0" style="pointer-events: none;">
+                        <rect x="240" y="305" width="325" height="10" fill="url(#ruler-energy)" rx="2" opacity="0.8" />
+                        <g stroke="#ffffff" stroke-width="1.2">
+                            <line x1="240" y1="305" x2="240" y2="315" />
+                            <line x1="402.5" y1="305" x2="402.5" y2="311" />
+                            <line x1="565" y1="305" x2="565" y2="315" />
+                        </g>
+                    </g>
+                </svg>
+            </div>
+
+            <!-- IN-GAME INTERACTIVE CONSOLE HUD (Pokémon Emerald Battle Theme Style) -->
+            <div class="h-44 bg-[#588d67] border-t-4 border-[#2b4c38] flex flex-row p-2.5 gap-2.5 shadow-[inset_0_4px_8px_rgba(0,0,0,0.5)] shrink-0">
+                
+                <!-- Left Dialogue Window -->
+                <div class="flex-1 bg-[#f8fcf0] border-[3px] border-double border-[#88a080] rounded-xl p-3 text-[#142d1b] font-extrabold text-xs leading-relaxed flex flex-col justify-center retro-text shadow-inner overflow-y-auto">
+                    <div id="screen-dialogue" class="tracking-wide">
+                        DLSZ Physics Lab Terminal initialized.<br>Select commands to target range computations.
+                    </div>
+                </div>
+
+                <!-- Right Action Grid (Pokémon Emerald style 2x2 action matrix) -->
+                <div class="w-72 bg-[#487858] rounded-xl p-1 grid grid-cols-2 gap-1.5 border-2 border-[#305840]">
+                    <!-- Launch Button -->
+                    <button onclick="runSimulation()" class="bg-[#f8fcf0] hover:bg-[#e0edd4] active:bg-[#afd8b5] text-[#142d1b] font-black text-xs rounded-lg border-2 border-[#88a080] flex items-center justify-between px-3.5 cursor-pointer shadow-md transition active:scale-95 retro-text">
+                        <span class="pixel-shadow text-white bg-red-500 py-0.5 px-1.5 rounded mr-1">LAUNCH</span>
+                        <span class="text-[10px] text-zinc-500">A</span>
+                    </button>
+                    <!-- Ruler Selector Button -->
+                    <button onclick="cycleRuler()" class="bg-[#f8fcf0] hover:bg-[#e0edd4] active:bg-[#afd8b5] text-[#142d1b] font-black text-xs rounded-lg border-2 border-[#88a080] flex items-center justify-between px-3.5 cursor-pointer shadow-md transition active:scale-95 retro-text">
+                        <span class="pixel-shadow text-white bg-indigo-500 py-0.5 px-1.5 rounded mr-1">RULER</span>
+                        <span id="active-hud-indicator" class="text-[9px] text-[#2c4236] font-mono font-bold bg-[#afd8b5] px-1 rounded">OFF</span>
+                    </button>
+                    <!-- Clear HUD Button -->
+                    <button onclick="toggleRuler('clear')" class="bg-[#f8fcf0] hover:bg-[#e0edd4] active:bg-[#afd8b5] text-[#142d1b] font-black text-xs rounded-lg border-2 border-[#88a080] flex items-center justify-between px-3.5 cursor-pointer shadow-md transition active:scale-95 retro-text">
+                        <span class="pixel-shadow text-white bg-yellow-600 py-0.5 px-1.5 rounded mr-1">RESET</span>
+                        <span class="text-[10px] text-zinc-500">SEL</span>
+                    </button>
+                    <!-- Clear Path Data Button -->
+                    <button onclick="clearMarks()" class="bg-[#f8fcf0] hover:bg-[#e0edd4] active:bg-[#afd8b5] text-[#142d1b] font-black text-xs rounded-lg border-2 border-[#88a080] flex items-center justify-between px-3.5 cursor-pointer shadow-md transition active:scale-95 retro-text">
+                        <span class="pixel-shadow text-white bg-zinc-600 py-0.5 px-1.5 rounded mr-1">CLEAR</span>
+                        <span class="text-[10px] text-zinc-500">B</span>
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Scripting Engine -->
+    <script>
+        const diagnosticsData = {
+            h: "HEIGHT PROFILE ($h$)<br>Conversion of Gravitational Potential Energy to Horizontal Kinetic Energy:<br>$$mgh = \\frac{1}{2}mv_x^2 \\Rightarrow v_x = \\sqrt{2gh}$$",
+            y: "FREE-FALL AXIS ($y$)<br>Descent displacement establishes exact physical trajectory flight time:<br>$$y = \\frac{1}{2}gt^2 \\Rightarrow t = \\sqrt{\\frac{2y}{g}}$$",
+            R: "RANGE FIELD ($R$)<br>Horizontal Displacement parameters:<br><strong class='text-red-700'>CHALLENGE:</strong> Combine the expressions above to derive the formula for Horizontal Range ($R$) utilizing variables $h$ and $y$!",
+            clear: "HUD CLEARED.<br>Cycle RULERS to analyze isolated spatial axes metrics.",
+            default: "DLSZ Physics Lab Terminal initialized.<br>Select commands to target range computations."
+        };
+
+        const rulerCycleList = ['h', 'y', 'R', 'clear'];
+        let cycleIndex = 3;
+
+        // Start Screen Boot Function
+        function startLab() {
+            const startScreen = document.getElementById('start-screen');
+            startScreen.style.opacity = '0';
+            startScreen.style.pointerEvents = 'none';
+            // Trigger MathJax processing on the initial HUD text
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+            setTimeout(() => {
+                startScreen.style.display = 'none';
+            }, 700);
+        }
+
+        function cycleRuler() {
+            cycleIndex = (cycleIndex + 1) % rulerCycleList.length;
+            const targetKey = rulerCycleList[cycleIndex];
+            toggleRuler(targetKey);
+        }
+
+        function toggleRuler(key) {
+            const list = ['h', 'y', 'R'];
+            
+            list.forEach(p => {
+                const element = document.getElementById(`ruler-${p}`);
+                element.style.opacity = '0';
+                element.style.transform = 'translateY(4px)';
+            });
+
+            const hudIndicator = document.getElementById('active-hud-indicator');
+
+            if (key === 'clear') {
+                cycleIndex = 3;
+                hudIndicator.textContent = "OFF";
+                hudIndicator.className = "text-[9px] text-zinc-500 bg-zinc-200 px-1 rounded font-mono";
+                updateHUD('clear');
+                return;
+            }
+
+            const targetElement = document.getElementById(`ruler-${key}`);
+            targetElement.style.opacity = '1';
+            targetElement.style.transform = 'translateY(0px)';
+            
+            hudIndicator.textContent = key.toUpperCase();
+            hudIndicator.className = "text-[9px] text-[#142d1b] bg-[#c3e6c9] px-1 rounded font-mono font-black";
+            updateHUD(key);
+        }
+
+        function updateHUD(key) {
+            const diag = document.getElementById('screen-dialogue');
+            diag.innerHTML = diagnosticsData[key] || diagnosticsData.default;
+            if (window.MathJax) {
+                MathJax.typesetPromise([diag]);
+            }
+        }
+
+        // ==================== EMULATED PHYSICS ENGINE ====================
+        let isRunning = false;
+        const ball = document.getElementById('steel-ball');
+        const ripple = document.getElementById('ripple-circle');
+        const impactMarksGroup = document.getElementById('impact-marks');
+
+        function runSimulation() {
+            if (isRunning) return;
+            // Guard to make sure the start screen isn't still blocking interactions
+            if (document.getElementById('start-screen').style.display !== 'none') return;
+            
+            isRunning = true;
+
+            const startX = 100, startY = 40;
+            const tableX = 240, tableY = 165;
+            const floorY = 297;
+
+            // Introduce minimal physical landing scatter (standard laboratory variance)
+            const randomSpread = (Math.random() - 0.5) * 16;
+            const landingX = 565 + randomSpread;
+
+            const rampDuration = 900;
+            const flightDuration = 600;
+            const startTime = performance.now();
+
+            function animate(now) {
+                const elapsed = now - startTime;
+
+                if (elapsed < rampDuration) {
+                    const t = elapsed / rampDuration;
+                    const easeT = t * t; 
+                    
+                    const bx = (1 - easeT) * (1 - easeT) * startX + 2 * (1 - easeT) * easeT * 140 + easeT * easeT * tableX;
+                    const by = (1 - easeT) * (1 - easeT) * startY + 2 * (1 - easeT) * easeT * tableY + easeT * easeT * tableY;
+
+                    ball.setAttribute('transform', `translate(${bx}, ${by}) rotate(${bx * 4})`);
+                    requestAnimationFrame(animate);
+                } 
+                else if (elapsed < rampDuration + flightDuration) {
+                    const t = (elapsed - rampDuration) / flightDuration;
+                    const fx = tableX + t * (landingX - tableX);
+                    const fy = tableY + (t * t) * (floorY - tableY);
+
+                    ball.setAttribute('transform', `translate(${fx}, ${fy}) rotate(${fx * 4})`);
+                    requestAnimationFrame(animate);
+                } 
+                else {
+                    // IMPACT LANDING
+                    ball.setAttribute('transform', `translate(${landingX}, ${floorY})`);
+                    
+                    // Neon impact circle wave
+                    ripple.setAttribute('cx', landingX);
+                    ripple.setAttribute('cy', floorY);
+                    ripple.setAttribute('class', 'impact-ripple');
+                    ripple.style.opacity = '1';
+
+                    // Place capture marker coordinate point on floor grid
+                    const mark = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    mark.setAttribute("cx", landingX);
+                    mark.setAttribute("cy", floorY);
+                    mark.setAttribute("r", "3");
+                    mark.setAttribute("fill", "#22d3ee");
+                    mark.setAttribute("stroke", "#ffffff");
+                    mark.setAttribute("stroke-width", "1");
+                    impactMarksGroup.appendChild(mark);
+
+                    setTimeout(() => {
+                        ripple.setAttribute('class', '');
+                        ripple.style.opacity = '0';
+                        
+                        // Physics slide-back to launcher start state
+                        let resetStart = performance.now();
+                        function slideBack(nowBack) {
+                            let resetElapsed = nowBack - resetStart;
+                            let progress = Math.min(resetElapsed / 400, 1);
+                            
+                            const curX = landingX + progress * (startX - landingX);
+                            const curY = floorY + progress * (startY - floorY);
+                            ball.setAttribute('transform', `translate(${curX}, ${curY})`);
+
+                            if (progress < 1) {
+                                requestAnimationFrame(slideBack);
+                            } else {
+                                isRunning = false;
+                            }
+                        }
+                        requestAnimationFrame(slideBack);
+                    }, 650);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function clearMarks() {
+            impactMarksGroup.innerHTML = '';
+        }
+    </script>
+</body>
+</html>
