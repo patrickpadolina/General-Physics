@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Static Friction Experiment Simulator</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gba-bg: #1e1e24;
+            --gba-panel: #e2dfd2;
+            --gba-border: #4a4a4a;
+            --gba-border-dark: #1f1f1f;
+            --text-color: #2c2c2c;
+            
+            /* Surface Colors */
+            --wood-color: #b07d50;
+            --plastic-color: #7da4b5;
+            --cardboard-color: #c2b280;
+        }
+
+        * {
+            box-sizing: border-box;
+            image-rendering: pixelated;
+        }
+
+        body {
+            background-color: var(--gba-bg);
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            user-select: none;
+        }
+
+        /* GBA-style handheld frame container */
+        .console-container {
+            width: 850px;
+            background: #5d5b6a;
+            border: 8px solid var(--gba-border-dark);
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 12px 0 #3a3845, 0 20px 20px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .screen {
+            background-color: #111;
+            border: 6px solid #2d2b38;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Top Header */
+        .header-bar {
+            background: #2d2b38;
+            padding: 4px 12px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 24px;
+            letter-spacing: 1px;
+            color: #ffd700;
+            border-bottom: 3px solid #1f1f1f;
+        }
+
+        /* Simulation workspace split */
+        .workspace {
+            display: flex;
+            gap: 12px;
+            min-height: 380px; /* Switched to min-height to allow organic layout expansion */
+        }
+
+        /* Left side: Physics Canvas Area */
+        .canvas-area {
+            flex: 2;
+            height: 380px; /* Keeps the canvas aspect-ratio stable */
+            background: #87ceeb; /* Classic Retro Sky Blue */
+            border: 4px solid var(--gba-border-dark);
+            position: relative;
+            overflow: hidden;
+            border-radius: 6px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.15);
+        }
+
+        /* Ground line */
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 40px;
+            background: #557a46;
+            border-top: 4px solid #3f5e37;
+        }
+
+        /* The Incline Ramp (Pivots upward from the bottom-left corner) */
+        .ramp-anchor {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            width: 320px;
+            height: 12px;
+            background: var(--wood-color);
+            transform-origin: left bottom;
+            transition: transform 0.1s linear, background-color 0.3s ease;
+            border: 2px solid #000;
+            border-radius: 4px;
+            z-index: 5;
+        }
+
+        /* Object starts at the high right end of the ramp and slides down to the left */
+        .sliding-object {
+            width: 36px;
+            height: 24px;
+            background: #e74c3c;
+            border: 2px solid #000;
+            position: absolute;
+            bottom: 12px; /* Sits directly on top of the ramp surface */
+            z-index: 6;
+            display: none; 
+            cursor: pointer;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+            left: 260px;
+        }
+
+        /* Drop Zone overlay on the high end of the ramp (right side) */
+        .drop-zone {
+            position: absolute;
+            width: 120px;
+            height: 45px;
+            top: -55px;
+            left: 190px;
+            border: 2px dashed #000;
+            background: rgba(255, 255, 255, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            color: #000;
+            font-weight: bold;
+            pointer-events: auto;
+            text-align: center;
+            line-height: 1.1;
+            border-radius: 4px;
+        }
+
+        /* --- Blueprint Auto-Ruler System --- */
+        .meas-line {
+            position: absolute;
+            pointer-events: none;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* Horizontal Ground Ruler (x) */
+        #meas-x {
+            bottom: 38px;
+            left: 40px;
+            height: 4px;
+            background: #1b5e20; /* High contrast dark green for the line */
+            transition: width 0.1s linear;
+            width: 320px; /* starts flat */
+        }
+
+        #meas-x-label {
+            position: absolute;
+            top: 10px;
+            color: #2ecc71; /* Bright green text */
+            background: #000000;
+            padding: 2px 8px;
+            border: 2px solid #2ecc71;
+            border-radius: 4px;
+            white-space: nowrap;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+            font-size: 18px;
+        }
+
+        /* Vertical Height Ruler (y) */
+        #meas-y {
+            bottom: 40px;
+            width: 4px;
+            background: #b71c1c; /* High contrast dark red for the line */
+            transition: height 0.1s linear, left 0.1s linear;
+            height: 0px; /* starts flat */
+            left: 360px; /* 40px margin + 320px ramp width */
+        }
+
+        #meas-y-label {
+            position: absolute;
+            right: 15px; /* Placed left of vertical line to guarantee it is 100% visible on canvas */
+            color: #ff4d4d; /* Bright red text */
+            background: #000000;
+            padding: 2px 8px;
+            border: 2px solid #ff4d4d;
+            border-radius: 4px;
+            white-space: nowrap;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+            font-size: 18px;
+        }
+
+        /* Right side: Control Panel */
+        .controls-panel {
+            flex: 1.1;
+            background: var(--gba-panel);
+            border: 4px solid var(--gba-border-dark);
+            border-radius: 6px;
+            padding: 12px;
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            justify-content: space-between; /* Keeps the buttons clean and isolated */
+        }
+
+        .panel-title {
+            font-size: 22px;
+            font-weight: bold;
+            border-bottom: 2px solid var(--gba-border);
+            padding-bottom: 2px;
+            margin: 0;
+            color: #000;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .control-group label {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        select, input[type="range"], button {
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            padding: 4px;
+            border: 2px solid var(--gba-border-dark);
+            background: #fff;
+            outline: none;
+        }
+
+        button {
+            cursor: pointer;
+            background: #ffd700;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #b39700;
+            padding: 8px;
+            margin-top: 8px;
+            width: 100%;
+        }
+
+        button:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        /* Inventory Box */
+        .inventory {
+            display: flex;
+            gap: 10px;
+            background: #d1cca4;
+            border: 2px dashed #7a7553;
+            padding: 8px;
+            border-radius: 4px;
+            justify-content: space-around;
+        }
+
+        .drag-item {
+            width: 45px;
+            height: 35px;
+            border: 2px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 0 #000;
+        }
+        
+        #obj-eraser { background: #e05e5e; }
+        #obj-coin { background: #ffd700; border-radius: 50%; }
+        #obj-block { background: #a0522d; }
+
+        /* Bottom Text Dialogue - Stays isolated naturally by block alignment */
+        .dialogue-box {
+            background-color: #fff;
+            border: 4px double var(--gba-border-dark);
+            border-radius: 6px;
+            padding: 12px;
+            color: var(--text-color);
+            min-height: 80px;
+            font-size: 22px;
+            line-height: 1.2;
+            position: relative;
+        }
+
+        .dialogue-box::before {
+            content: '';
+            position: absolute;
+            top: 2px; left: 2px; right: 2px; bottom: 2px;
+            border: 1px solid #ddd;
+            pointer-events: none;
+        }
+
+        /* Helper values display */
+        .stats-display {
+            font-size: 18px;
+            background: #d8d4c3;
+            border: 2px solid var(--gba-border-dark);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="console-container">
+    <div class="screen">
+        <div class="header-bar">STATIC FRICTION LABORATORY MODULE</div>
+
+        <div class="workspace">
+            
+            <div class="canvas-area" id="canvas-area">
+                
+                <div class="meas-line" id="meas-x">
+                    <div id="meas-x-label">x (Ground): 32.0 cm</div>
+                </div>
+                <div class="meas-line" id="meas-y">
+                    <div id="meas-y-label">y (Height): 0.0 cm</div>
+                </div>
+
+                <div class="ground"></div>
+
+                <div class="ramp-anchor" id="ramp">
+                    <div class="drop-zone" id="drop-zone">PLACE<br>OBJECT HERE</div>
+                    <div class="sliding-object" id="active-object"></div>
+                </div>
+            </div>
+
+            <div class="controls-panel">
+                <p class="panel-title">CONTROL DECK</p>
+                
+                <div class="control-group">
+                    <label for="surface-select">1. Select Surface Material:</label>
+                    <select id="surface-select">
+                        <option value="wood">Wooden Board</option>
+                        <option value="plastic">Plastic Ruler</option>
+                        <option value="cardboard">Cardboard Sheet</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>2. Click or Drag Object to Ramp:</label>
+                    <div class="inventory">
+                        <div class="drag-item" id="obj-eraser" draggable="true" data-type="eraser">Eraser</div>
+                        <div class="drag-item" id="obj-coin" draggable="true" data-type="coin">Coin</div>
+                        <div class="drag-item" id="obj-block" draggable="true" data-type="block">Block</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="angle-slider" id="angle-label">3. Tilt Angle (θ): 0.0°</label>
+                    <input type="range" id="angle-slider" min="0" max="60" step="0.1" value="0" disabled>
+                </div>
+
+                <div class="stats-display" id="stats">
+                    x (Run): 32.0 cm | y (Rise): 0.0 cm<br>
+                    Calculated μs: --
+                </div>
+
+                <button id="reset-btn">RESET SETUP</button>
+            </div>
+        </div>
+
+        <div class="dialogue-box" id="dialogue">
+            Welcome to the experiment. Drag an object or simply CLICK on it to place it on the ramp! Watch the rulers dynamically measure the height (y) and length (x) as you tilt!
+        </div>
+    </div>
+</div>
+
+<script>
+    // Friction coefficients table synchronized to actual verified materials averages
+    const frictionTable = {
+        eraser: { wood: 0.70, plastic: 0.55, cardboard: 0.60 },
+        coin: { wood: 0.40, plastic: 0.25, cardboard: 0.32 },
+        block: { wood: 0.42, plastic: 0.35, cardboard: 0.38 }
+    };
+
+    // Surface colors mapping
+    const surfaceColors = {
+        wood: 'var(--wood-color)',
+        plastic: 'var(--plastic-color)',
+        cardboard: 'var(--cardboard-color)'
+    };
+
+    // DOM Elements
+    const ramp = document.getElementById('ramp');
+    const dropZone = document.getElementById('drop-zone');
+    const activeObject = document.getElementById('active-object');
+    const angleSlider = document.getElementById('angle-slider');
+    const angleLabel = document.getElementById('angle-label');
+    const surfaceSelect = document.getElementById('surface-select');
+    const dialogue = document.getElementById('dialogue');
+    const stats = document.getElementById('stats');
+    const resetBtn = document.getElementById('reset-btn');
+    const dragItems = document.querySelectorAll('.drag-item');
+    
+    // Auto-Ruler elements
+    const measX = document.getElementById('meas-x');
+    const measY = document.getElementById('meas-y');
+    const labelX = document.getElementById('meas-x-label');
+    const labelY = document.getElementById('meas-y-label');
+
+    // --- State variables explicitly tracked ---
+    let selectedObject = null; 
+    let currentAngle = 0;
+    let isSlipped = false;
+    let currentXCm = "32.0";
+    let currentYCm = "0.0";
+    let calculatedMu = "--";
+
+    // --- Surface Material Change Handler ---
+    surfaceSelect.addEventListener('change', (e) => {
+        const mat = e.target.value;
+        ramp.style.backgroundColor = surfaceColors[mat];
+        updateDialogue(`Surface changed to ${e.target.options[e.target.selectedIndex].text}.`);
+        resetMeasurements();
+    });
+
+    // --- Object Selection Handlers ---
+    dragItems.forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', e.target.dataset.type);
+        });
+
+        item.addEventListener('click', (e) => {
+            setupObject(e.target.dataset.type);
+        });
+    });
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault(); 
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const objType = e.dataTransfer.getData('text/plain');
+        if (objType) {
+            setupObject(objType);
+        }
+    });
+
+    function setupObject(type) {
+        selectedObject = type;
+        
+        // Remove animation transitions so positioning resets instantly
+        activeObject.style.transition = 'none';
+        activeObject.style.left = '260px'; // Visually locks at top right
+        
+        // Read DOM layout change instantly 
+        void activeObject.offsetWidth;
+
+        activeObject.style.display = 'block';
+        
+        if (type === 'eraser') {
+            activeObject.style.background = '#e05e5e';
+            activeObject.style.borderRadius = '4px';
+            activeObject.textContent = 'Eraser';
+        } else if (type === 'coin') {
+            activeObject.style.background = '#ffd700';
+            activeObject.style.borderRadius = '50%';
+            activeObject.textContent = 'Coin';
+        } else if (type === 'block') {
+            activeObject.style.background = '#a0522d';
+            activeObject.style.borderRadius = '2px';
+            activeObject.textContent = 'Block';
+        }
+
+        angleSlider.disabled = false;
+        dropZone.style.display = 'none'; 
+
+        updateDialogue(`Successfully placed the ${type} at the top of the ramp. Use the slider to start tilting.`);
+        resetMeasurements();
+    }
+
+    // --- Tilting, Sliding & Auto-Ruler Dynamics ---
+    angleSlider.addEventListener('input', (e) => {
+        if (!selectedObject) return;
+
+        currentAngle = parseFloat(e.target.value);
+        angleLabel.textContent = `3. Tilt Angle (θ): ${currentAngle.toFixed(1)}°`;
+        
+        // Rotate ramp counter-clockwise around the bottom-left pivot point
+        ramp.style.transform = `rotate(${-currentAngle}deg)`;
+
+        // Calculate and update variables
+        calculateVectors(currentAngle);
+
+        // Check if critical angle is reached
+        const currentSurface = surfaceSelect.value;
+        const mu_s = frictionTable[selectedObject][currentSurface];
+        const criticalAngleRad = Math.atan(mu_s);
+        const criticalAngleDeg = criticalAngleRad * (180 / Math.PI);
+
+        // Slide triggers precisely at the actual critical angle
+        if (currentAngle >= criticalAngleDeg && !isSlipped) {
+            triggerSlide(mu_s, criticalAngleDeg);
+        }
+    });
+
+    function calculateVectors(angle) {
+        const rampLengthVisual = 320; // 320px represents 32.0 cm visually
+        const scaleFactor = 10;       // 10 pixels = 1 cm
+        
+        const angleRad = angle * (Math.PI / 180);
+        
+        // Calculate physics values and bind to state variables
+        currentYCm = (rampLengthVisual * Math.sin(angleRad) / scaleFactor).toFixed(1); 
+        currentXCm = (rampLengthVisual * Math.cos(angleRad) / scaleFactor).toFixed(1);
+        calculatedMu = (parseFloat(currentYCm) / parseFloat(currentXCm)).toFixed(3);
+
+        // Visual rendering calculations
+        const xPx = Math.round(rampLengthVisual * Math.cos(angleRad));
+        const yPx = Math.round(rampLengthVisual * Math.sin(angleRad));
+
+        // 1. Update horizontal ground ruler (x)
+        measX.style.width = `${xPx}px`;
+        labelX.textContent = `x (Ground): ${currentXCm} cm`;
+
+        // 2. Update vertical height ruler (y)
+        measY.style.height = `${yPx}px`;
+        measY.style.left = `${40 + xPx}px`; 
+        labelY.textContent = `y (Height): ${currentYCm} cm`;
+
+        // Ensure labels behave nicely at flat angles
+        if (angle === 0) {
+            measY.style.height = '0px';
+            labelY.style.display = 'none';
+        } else {
+            labelY.style.display = 'block';
+        }
+
+        // 3. Keep control deck readings fully synchronized with active variables
+        stats.innerHTML = `x (Run): ${currentXCm} cm | y (Rise): ${currentYCm} cm<br>Calculated μs (y/x): ${calculatedMu}`;
+    }
+
+    function triggerSlide(mu_s, critAngle) {
+        isSlipped = true;
+        
+        // Re-inject smooth sliding CSS transition before positioning the slide
+        activeObject.style.transition = 'left 1.2s cubic-bezier(0.5, 0.05, 1, 0.5)';
+        
+        // Trigger CSS transition downward
+        activeObject.style.left = '10px'; 
+        angleSlider.disabled = true; 
+
+        // Update Text Box with variables directly matched to values
+        updateDialogue(`SLIDE TRIGGERED! The object has started sliding down at the critical angle θc = ${critAngle.toFixed(1)}°. Look at the blueprint rulers: the horizontal length (x) is ${currentXCm} cm, and the vertical height (y) is ${currentYCm} cm. Calculated Coefficient of Static Friction: μs = y/x ≈ ${parseFloat(calculatedMu).toFixed(2)}!`);
+    }
+
+    function resetMeasurements() {
+        // Strip out transitions instantly to avoid locking/glitching visually
+        activeObject.style.transition = 'none';
+        activeObject.style.left = '260px'; // Instant teleport back to top
+
+        // Force browser flow paint update
+        void activeObject.offsetWidth;
+
+        currentAngle = 0;
+        angleSlider.value = 0;
+        angleLabel.textContent = `3. Tilt Angle (θ): 0.0°`;
+        ramp.style.transform = `rotate(0deg)`;
+        isSlipped = false;
+
+        if (selectedObject) {
+            angleSlider.disabled = false;
+        }
+        calculateVectors(0);
+    }
+
+    // --- Global Reset ---
+    resetBtn.addEventListener('click', () => {
+        selectedObject = null;
+        activeObject.style.display = 'none';
+        dropZone.style.display = 'flex';
+        angleSlider.disabled = true;
+        resetMeasurements();
+        updateDialogue("Simulation reset. Choose a surface and drag/click an object to the top of the ramp to test again.");
+    });
+
+    function updateDialogue(text) {
+        dialogue.textContent = `INSTRUCTION: ${text}`;
+    }
+</script>
+
+</body>
+</html>
