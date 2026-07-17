@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mechanical Energy Simulator</title>
+    <!-- Pixelated font for GBA aesthetic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gba-bg: #E0F8D0;
+            --gba-dark: #081820;
+            --gba-mid: #346856;
+            --gba-light: #88c070;
+            --ui-blue: #3A5894;
+            --ui-orange: #C85010;
+        }
+
+        body {
+            font-family: 'Press Start 2P', monospace;
+            background-color: #222;
+            color: var(--gba-dark);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            image-rendering: pixelated;
+        }
+
+        /* GBA Wrapper Screen */
+        .console-screen {
+            width: 840px;
+            background-color: var(--gba-bg);
+            border: 12px solid #555;
+            border-radius: 10px;
+            box-shadow: 0px 10px 0px #333;
+            padding: 16px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .header-bar {
+            border: 4px solid var(--gba-dark);
+            padding: 12px;
+            background-color: var(--gba-light);
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.5;
+            text-transform: uppercase;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .panel {
+            border: 4px solid var(--gba-dark);
+            background-color: #f0fcf0;
+            padding: 12px;
+            position: relative;
+        }
+
+        .panel-title {
+            position: absolute;
+            top: -12px;
+            left: 12px;
+            background-color: var(--gba-bg);
+            padding: 0 6px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        /* Simulation Canvas Setup */
+        #simCanvas, #graphCanvas {
+            width: 100%;
+            height: 220px;
+            background-color: #c0ecc0;
+            border: 4px solid var(--gba-dark);
+            display: block;
+            box-sizing: border-box;
+        }
+
+        /* Form Controls */
+        .control-group {
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 10px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--gba-mid);
+            cursor: pointer;
+        }
+
+        .value-display {
+            font-size: 10px;
+            color: var(--gba-mid);
+            text-align: right;
+            margin-top: 2px;
+        }
+
+        /* Retro Buttons */
+        .btn-container {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        button {
+            font-family: 'Press Start 2P', monospace;
+            padding: 10px;
+            font-size: 11px;
+            border: 4px solid var(--gba-dark);
+            background-color: var(--gba-light);
+            cursor: pointer;
+            box-shadow: 2px 2px 0px var(--gba-dark);
+            flex: 1;
+        }
+
+        button:active {
+            box-shadow: 0px 0px 0px var(--gba-dark);
+            transform: translate(2px, 2px);
+        }
+
+        button:disabled {
+            background-color: #bbb;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        #btn-start { background-color: #88d088; }
+        #btn-reset { background-color: #f08888; }
+
+        /* Real-time Telemetry Screen */
+        .telemetry-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 9px;
+            margin-top: 4px;
+        }
+
+        .telemetry-box {
+            border: 2px solid var(--gba-dark);
+            padding: 8px;
+            background: #e4f4e4;
+        }
+
+        .telemetry-box.total {
+            grid-column: span 2;
+            background-color: var(--gba-light);
+            font-size: 11px;
+        }
+
+        /* GBA Dialog Textbox */
+        .dialog-box {
+            border: 6px double var(--gba-dark);
+            background-color: #f8fff8;
+            padding: 12px;
+            min-height: 48px;
+            font-size: 10px;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        .dialog-arrow {
+            position: absolute;
+            bottom: 4px;
+            right: 8px;
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid var(--gba-dark);
+            animation: bounce 0.6s infinite alternate;
+        }
+
+        /* Graph Custom Legends */
+        .graph-legend {
+            display: flex;
+            justify-content: space-between;
+            font-size: 8px;
+            margin-top: 6px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 4px; }
+        .dot { width: 8px; height: 8px; display: inline-block; border: 1px solid var(--gba-dark); }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(4px); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="console-screen">
+    <div class="header-bar">
+        Physics Lab Advance<br>
+        Conservation of Mechanical Energy Visualizer
+    </div>
+
+    <div class="workspace">
+        <!-- Left Side: Physics Engine & Dialogue -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+            <div class="panel">
+                <span class="panel-title">Ramp Simulation</span>
+                <canvas id="simCanvas" width="380" height="220"></canvas>
+            </div>
+
+            <div class="dialog-box">
+                <div id="dialog-text">System initialization ready. Set properties and press START to release the Smart Cart from rest.</div>
+                <div class="dialog-arrow"></div>
+            </div>
+        </div>
+
+        <!-- Right Side: Real-Time Compiler Graphics -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+            <div class="panel">
+                <span class="panel-title">SPARKvue Multi-Curve Graphic</span>
+                <canvas id="graphCanvas" width="380" height="220"></canvas>
+                <div class="graph-legend">
+                    <div class="legend-item"><span class="dot" style="background-color: var(--ui-orange);"></span>KE</div>
+                    <div class="legend-item"><span class="dot" style="background-color: var(--ui-blue);"></span>PE</div>
+                    <div class="legend-item"><span class="dot" style="background-color: var(--gba-dark);"></span>Total ME</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Controls & Register Metrics Layout -->
+    <div class="workspace">
+        <div class="panel">
+            <span class="panel-title">Control Compiler</span>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px;">
+                <div>
+                    <div class="control-group">
+                        <label for="param-mass">Cart Mass (m):</label>
+                        <input type="range" id="param-mass" min="0.250" max="1.000" step="0.050" value="0.500">
+                        <div class="value-display" id="val-mass">0.500 kg</div>
+                    </div>
+                    <div class="control-group">
+                        <label for="param-height">Ramp Height Rise (H):</label>
+                        <input type="range" id="param-height" min="0.05" max="0.25" step="0.01" value="0.15">
+                        <div class="value-display" id="val-height">0.150 m</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="control-group">
+                        <label for="param-friction">Track Friction Coeff. (μk):</label>
+                        <input type="range" id="param-friction" min="0.00" max="0.08" step="0.01" value="0.02">
+                        <div class="value-display" id="val-friction">0.020</div>
+                    </div>
+                    <div class="btn-container">
+                        <button id="btn-start">START</button>
+                        <button id="btn-reset">RESET</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <span class="panel-title">Data Registers (SPARKvue Live)</span>
+            <div class="telemetry-grid" style="margin-top: 4px;">
+                <div class="telemetry-box">Position (x):<br><span id="tel-x" style="font-weight:bold;">0.000 m</span></div>
+                <div class="telemetry-box">Velocity (v):<br><span id="tel-v" style="font-weight:bold;">0.000 m/s</span></div>
+                <div class="telemetry-box">Kinetic En. (KE):<br><span id="tel-ke" style="font-weight:bold; color:var(--ui-orange);">0.000 J</span></div>
+                <div class="telemetry-box">Potential En. (PE):<br><span id="tel-pe" style="font-weight:bold; color:var(--ui-blue);">0.000 J</span></div>
+                <div class="telemetry-box total">Total Energy (E_total):<br><span id="tel-te" style="font-weight:bold;">0.000 J</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // System Constant Metrics
+    const TRACK_LENGTH = 1.200; // Meters (L)
+    const g = 9.80;            // m/s^2
+
+    // Engine Variables
+    let mass = 0.500;
+    let H = 0.15;
+    let muk = 0.02;
+
+    let sinTheta = H / TRACK_LENGTH;
+    let cosTheta = Math.sqrt(1 - sinTheta * sinTheta);
+
+    // Simulation Execution Variables
+    let isRunning = false;
+    let currentX = TRACK_LENGTH; 
+    let currentV = 0.0;
+    let timeElapsed = 0.0;
+    let lastTime = 0;
+
+    // Graph Data Array Stream
+    let graphData = [];
+
+    // Canvases
+    const simCanvas = document.getElementById('simCanvas');
+    const sCtx = simCanvas.getContext('2d');
+    const graphCanvas = document.getElementById('graphCanvas');
+    const gCtx = graphCanvas.getContext('2d');
+
+    // Controls
+    const pMass = document.getElementById('param-mass');
+    const pHeight = document.getElementById('param-height');
+    const pFriction = document.getElementById('param-friction');
+    const vMass = document.getElementById('val-mass');
+    const vHeight = document.getElementById('val-height');
+    const vFriction = document.getElementById('val-friction');
+    const btnStart = document.getElementById('btn-start');
+    const btnReset = document.getElementById('btn-reset');
+    const dialogText = document.getElementById('dialog-text');
+
+    function updateParams() {
+        mass = parseFloat(pMass.value);
+        H = parseFloat(pHeight.value);
+        muk = parseFloat(pFriction.value);
+
+        vMass.innerText = mass.toFixed(3) + " kg";
+        vHeight.innerText = H.toFixed(3) + " m";
+        vFriction.innerText = muk.toFixed(3);
+
+        sinTheta = H / TRACK_LENGTH;
+        cosTheta = Math.sqrt(1 - sinTheta * sinTheta);
+        
+        if(!isRunning) {
+            currentX = TRACK_LENGTH;
+            currentV = 0.0;
+            timeElapsed = 0.0;
+            graphData = [];
+        }
+        calculateRecordData();
+        drawSim();
+        drawGraph();
+    }
+
+    pMass.addEventListener('input', updateParams);
+    pHeight.addEventListener('input', updateParams);
+    pFriction.addEventListener('input', updateParams);
+
+    function calculateRecordData() {
+        let currentHeight = currentX * sinTheta;
+        let ke = 0.5 * mass * currentV * currentV;
+        let pe = mass * g * currentHeight;
+        let te = ke + pe;
+
+        document.getElementById('tel-x').innerText = currentX.toFixed(3) + " m";
+        document.getElementById('tel-v').innerText = currentV.toFixed(3) + " m/s";
+        document.getElementById('tel-ke').innerText = ke.toFixed(3) + " J";
+        document.getElementById('tel-pe').innerText = pe.toFixed(3) + " J";
+        document.getElementById('tel-te').innerText = te.toFixed(3) + " J";
+
+        if (isRunning || graphData.length === 0) {
+            graphData.push({ time: timeElapsed, ke: ke, pe: pe, te: te });
+        }
+    }
+
+    function simulationStep(timestamp) {
+        if (!isRunning) return;
+        
+        if (!lastTime) lastTime = timestamp;
+        let dt = (timestamp - lastTime) / 1000;
+        if (dt > 0.1) dt = 0.1; 
+        lastTime = timestamp;
+
+        let accGravity = g * sinTheta;
+        let accFriction = muk * g * cosTheta;
+        let netAcceleration = accGravity - accFriction;
+
+        if (netAcceleration < 0) netAcceleration = 0;
+
+        currentV += netAcceleration * dt;
+        currentX -= currentV * dt;
+        timeElapsed += dt;
+
+        if (currentX <= 0) {
+            currentX = 0;
+            isRunning = false;
+            btnStart.disabled = true;
+            dialogText.innerText = `Bumper contact reached! Final dynamic record compiled at t = ${timeElapsed.toFixed(2)}s. Evaluate net loss in energy grids.`;
+        }
+
+        calculateRecordData();
+        drawSim();
+        drawGraph();
+
+        if (isRunning) {
+            requestAnimationFrame(simulationStep);
+        }
+    }
+
+    function drawSim() {
+        sCtx.clearRect(0, 0, simCanvas.width, simCanvas.height);
+        
+        // Background Pixels Grid
+        sCtx.strokeStyle = '#b4e0b4';
+        sCtx.lineWidth = 2;
+        for(let i = 0; i < simCanvas.width; i += 20) {
+            sCtx.beginPath(); sCtx.moveTo(i, 0); sCtx.lineTo(i, simCanvas.height); sCtx.stroke();
+        }
+        for(let j = 0; j < simCanvas.height; j += 20) {
+            sCtx.beginPath(); sCtx.moveTo(0, j); sCtx.lineTo(simCanvas.width, j); sCtx.stroke();
+        }
+
+        // Setup Fixed Horizontal Geometry Bounds
+        let startX = 60, endX = 340, endY = 180;
+        
+        // Dynamically compute startY relative to the real-time variable H setting (0.05m to 0.25m mapped to canvas pixels)
+        // Max H scale height corresponds to 120 pixels displacement upward
+        let currentPixelHeight = (H / 0.25) * 120;
+        let startY = endY - currentPixelHeight;
+
+        // Draw Incline Plane Triangle
+        sCtx.strokeStyle = '#081820';
+        sCtx.lineWidth = 6;
+        sCtx.fillStyle = '#88c070';
+        sCtx.beginPath();
+        sCtx.moveTo(startX, startY);
+        sCtx.lineTo(endX, endY);
+        sCtx.lineTo(startX, endY);
+        sCtx.closePath();
+        sCtx.fill();
+        sCtx.stroke();
+
+        // --- RETRO PIXEL RULERS ---
+        sCtx.fillStyle = '#081820';
+        sCtx.strokeStyle = '#081820';
+        sCtx.lineWidth = 2;
+        sCtx.font = '6px "Press Start 2P"';
+
+        // Vertical Y-Ruler (Height Rise - Updates Dynamically to match top of ramp)
+        sCtx.beginPath();
+        sCtx.moveTo(startX - 15, startY);
+        sCtx.lineTo(startX - 15, endY);
+        sCtx.stroke();
+        
+        let yTicks = 4;
+        for (let k = 0; k <= yTicks; k++) {
+            let ratio = k / yTicks;
+            let currentYTick = endY - (endY - startY) * ratio;
+            let currentHeightVal = H * ratio;
+            
+            sCtx.beginPath();
+            sCtx.moveTo(startX - 20, currentYTick);
+            sCtx.lineTo(startX - 15, currentYTick);
+            sCtx.stroke();
+            sCtx.fillText(currentHeightVal.toFixed(2), startX - 45, currentYTick + 2);
+        }
+        
+        // Horizontal X-Ruler (Base Run - Updates width dynamically based on cosTheta geometry)
+        sCtx.beginPath();
+        sCtx.moveTo(startX, endY + 15);
+        sCtx.lineTo(endX, endY + 15);
+        sCtx.stroke();
+
+        let xTicks = 4;
+        let horizontalRunLength = TRACK_LENGTH * cosTheta;
+        for (let k = 0; k <= xTicks; k++) {
+            let ratio = k / xTicks;
+            let currentXTick = startX + (endX - startX) * ratio;
+            let currentRunVal = horizontalRunLength * ratio;
+            
+            sCtx.beginPath();
+            sCtx.moveTo(currentXTick, endY + 15);
+            sCtx.lineTo(currentXTick, endY + 20);
+            sCtx.stroke();
+            sCtx.fillText(currentRunVal.toFixed(2), currentXTick - 10, endY + 30);
+        }
+
+        // Ruler Labels
+        sCtx.fillText("H(m)", startX - 45, startY - 10);
+        sCtx.fillText("Run(m)", endX - 25, endY + 8);
+        // -------------------------
+
+        // Cart Coordinates Mapping Calculations
+        let ratio = currentX / TRACK_LENGTH;
+        let cartX = endX - (endX - startX) * ratio;
+        let cartY = endY - (endY - startY) * ratio;
+
+        sCtx.save();
+        sCtx.translate(cartX, cartY);
+        sCtx.rotate(Math.atan2(endY - startY, endX - startX));
+
+        sCtx.fillStyle = '#346856';
+        sCtx.strokeStyle = '#081820';
+        sCtx.lineWidth = 3;
+        sCtx.fillRect(-20, -14, 40, 14);
+        sCtx.strokeRect(-20, -14, 40, 14);
+
+        sCtx.fillStyle = '#081820';
+        sCtx.fillRect(-14, 0, 8, 4);
+        sCtx.fillRect(6, 0, 8, 4);
+        sCtx.restore();
+
+        sCtx.fillStyle = '#C85010';
+        sCtx.fillRect(endX - 4, endY - 16, 8, 16);
+        sCtx.strokeRect(endX - 4, endY - 16, 8, 16);
+    }
+
+    function drawGraph() {
+        gCtx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+        
+        // Background Grid
+        gCtx.strokeStyle = '#b4e0b4';
+        gCtx.lineWidth = 1;
+        for(let i = 30; i < graphCanvas.width; i += 30) {
+            gCtx.beginPath(); gCtx.moveTo(i, 0); gCtx.lineTo(i, graphCanvas.height - 25); gCtx.stroke();
+        }
+        for(let j = 20; j < graphCanvas.height - 25; j += 25) {
+            gCtx.beginPath(); gCtx.moveTo(30, j); gCtx.lineTo(graphCanvas.width, j); gCtx.stroke();
+        }
+
+        // Output Axis Border
+        gCtx.strokeStyle = '#081820';
+        gCtx.lineWidth = 4;
+        gCtx.beginPath();
+        gCtx.moveTo(30, 10);
+        gCtx.lineTo(30, graphCanvas.height - 25);
+        gCtx.lineTo(graphCanvas.width - 10, graphCanvas.height - 25);
+        gCtx.stroke();
+
+        // Label axis markers
+        gCtx.fillStyle = '#081820';
+        gCtx.font = '7px "Press Start 2P"';
+        gCtx.fillText("E(J)", 2, 16);
+        gCtx.fillText("t(s)", graphCanvas.width - 35, graphCanvas.height - 10);
+
+        if (graphData.length === 0) return;
+
+        // Dynamic Scaling Parameters
+        let maxEnergy = mass * g * (TRACK_LENGTH * (0.25 / TRACK_LENGTH)); 
+        maxEnergy = Math.max(maxEnergy, graphData[0].te) * 1.1; 
+        let maxTime = Math.max(2.5, timeElapsed * 1.2);
+
+        let mapX = (t) => 30 + (t / maxTime) * (graphCanvas.width - 45);
+        let mapY = (e) => (graphCanvas.height - 25) - (e / maxEnergy) * (graphCanvas.height - 40);
+
+        // Render Wave Lines
+        let drawCurve = (key, color) => {
+            gCtx.strokeStyle = color;
+            gCtx.lineWidth = 3;
+            gCtx.beginPath();
+            gCtx.moveTo(mapX(graphData[0].time), mapY(graphData[0][key]));
+            
+            for (let k = 1; k < graphData.length; k++) {
+                gCtx.lineTo(mapX(graphData[k].time), mapY(graphData[k][key]));
+            }
+            gCtx.stroke();
+        };
+
+        drawCurve('ke', '#C85010'); // Kinetic
+        drawCurve('pe', '#3A5894'); // Potential
+        drawCurve('te', '#081820'); // Total ME
+    }
+
+    btnStart.addEventListener('click', () => {
+        if (!isRunning && currentX > 0) {
+            isRunning = true;
+            lastTime = 0;
+            btnStart.disabled = true;
+            pMass.disabled = true;
+            pHeight.disabled = true;
+            pFriction.disabled = true;
+            dialogText.innerText = "Cart released. Monitoring kinetic vectors and potential drops via SPARKvue registers...";
+            requestAnimationFrame(simulationStep);
+        }
+    });
+
+    btnReset.addEventListener('click', () => {
+        isRunning = false;
+        btnStart.disabled = false;
+        pMass.disabled = false;
+        pHeight.disabled = false;
+        pFriction.disabled = false;
+        currentX = TRACK_LENGTH;
+        currentV = 0.0;
+        timeElapsed = 0.0;
+        graphData = [];
+        dialogText.innerText = "System variables reset. Track configuration cleared. Ready for iteration loops.";
+        updateParams();
+        drawSim();
+    });
+
+    updateParams();
+    drawSim();
+</script>
+
+</body>
+</html>
