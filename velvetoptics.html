@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VELVET OPTICS - Mirrors and Lenses Visualizers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Impact&family=Montserrat:ital,wght@0,800;0,900;1,800;1,900&display=swap" rel="stylesheet">
+  
+  <!-- MathJax Library -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', 'Impact', sans-serif;
+      user-select: none;
+    }
+
+    /* Midnight Channel Dark Aesthetic */
+    body {
+      background-color: #12131a;
+      background-image: 
+        radial-gradient(rgba(249, 233, 6, 0.08) 18%, transparent 19%),
+        linear-gradient(135deg, #181a24 0%, #0d0e14 100%);
+      background-size: 14px 14px, 100% 100%;
+      color: #ffffff;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Retro CRT Scanline Overlay */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%, 
+        rgba(0, 0, 0, 0.25) 50%
+      );
+      background-size: 100% 4px;
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    /* P4 Rainbow Accent Line */
+    .rainbow-stripe {
+      height: 12px;
+      width: 100%;
+      background: linear-gradient(
+        90deg, 
+        #00f0ff 0%, #00f0ff 20%, 
+        #00ff66 20%, #00ff66 40%, 
+        #ff0055 40%, #ff0055 60%, 
+        #f9e906 60%, #f9e906 80%, 
+        #000000 80%
+      );
+      border-top: 3px solid #f9e906;
+      border-bottom: 3px solid #000;
+      margin-bottom: 15px;
+    }
+
+    .container {
+      max-width: 1100px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Header Banner */
+    header {
+      background: #1f212d;
+      color: #ffffff;
+      padding: 20px 30px;
+      transform: rotate(-2deg);
+      border: 4px solid #f9e906;
+      box-shadow: 8px 8px 0px #ff0055, 14px 14px 0px #000000;
+      position: relative;
+    }
+
+    header h1 {
+      font-family: 'Impact', sans-serif;
+      font-size: 2.8rem;
+      letter-spacing: 2px;
+      color: #f9e906;
+      text-transform: uppercase;
+      text-shadow: 3px 3px 0px #ff0055, -2px -2px 0px #00f0ff;
+      margin-bottom: 4px;
+    }
+
+    header p {
+      font-weight: 800;
+      font-style: italic;
+      color: #00f0ff;
+      font-size: 1rem;
+      letter-spacing: 1px;
+    }
+
+    /* Controls Panel */
+    .controls {
+      background: #1f212d;
+      padding: 24px;
+      border: 4px solid #000000;
+      box-shadow: 8px 8px 0px #f9e906;
+      transform: rotate(1deg);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      align-items: center;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    label {
+      font-weight: 900;
+      font-size: 1rem;
+      color: #f9e906;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px 10px;
+      border: 3px solid #000000;
+      background: #2a2d3d;
+      color: #ffffff;
+      font-weight: 900;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      cursor: pointer;
+      transform: skew(-10deg);
+      transition: all 0.15s ease;
+      box-shadow: 4px 4px 0px #000000;
+    }
+
+    .btn:hover {
+      background: #00f0ff;
+      color: #000000;
+      transform: skew(-10deg) translate(-2px, -2px);
+      box-shadow: 6px 6px 0px #000000;
+    }
+
+    .btn.active {
+      background: #f9e906;
+      color: #000000;
+      border-color: #000000;
+      box-shadow: 4px 4px 0px #ff0055;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 16px;
+      background: #000000;
+      border-radius: 0px;
+      outline: none;
+      border: 2px solid #f9e906;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 28px;
+      height: 28px;
+      background: #ff0055;
+      border: 3px solid #000000;
+      cursor: pointer;
+      transform: rotate(45deg);
+    }
+
+    /* Formula & Math Panel */
+    .formula-panel {
+      background: #000000;
+      border: 4px solid #00f0ff;
+      padding: 20px;
+      box-shadow: 8px 8px 0px #ff0055;
+      transform: rotate(-1deg);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .formula-box {
+      background: #181a24;
+      border: 2px solid #f9e906;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .formula-box h4 {
+      font-family: 'Impact', sans-serif;
+      color: #f9e906;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .math-expr {
+      font-size: 1.15rem;
+      color: #00f0ff;
+      background: #000;
+      padding: 10px 12px;
+      border: 1px solid #333;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+    }
+
+    .substitution {
+      font-size: 1rem;
+      color: #00ff66;
+      background: #000;
+      padding: 8px 12px;
+      border: 1px solid #222;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+    }
+
+    /* MathJax Dark Theme Overrides */
+    .mjx-chtml, .mjx-svg {
+      color: inherit !important;
+      fill: currentColor !important;
+    }
+
+    /* Mnemonics Grid */
+    .mnemonics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: #1f212d;
+      border: 3px solid #33374a;
+      padding: 14px;
+      transform: rotate(-1deg) skew(-2deg);
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 6px 6px 0px #000000;
+      opacity: 0.6;
+    }
+
+    .card.active {
+      opacity: 1;
+      transform: scale(1.08) rotate(2deg) skew(0deg);
+      background: #000000;
+      color: #ffffff;
+      box-shadow: 10px 10px 0px #ff0055, 10px 10px 0px 3px #f9e906;
+      border-color: #00f0ff;
+    }
+
+    .card h3 {
+      font-family: 'Impact', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card .acronym {
+      color: #f9e906;
+    }
+
+    .card.active .acronym {
+      color: #00f0ff;
+      text-shadow: 2px 2px 0px #ff0055;
+    }
+
+    .card p {
+      font-size: 0.85rem;
+      font-weight: 800;
+      line-height: 1.2;
+      color: #dddddd;
+    }
+
+    .card .badge {
+      font-size: 0.65rem;
+      padding: 3px 6px;
+      background: #000000;
+      color: #f9e906;
+      font-weight: 900;
+      text-transform: uppercase;
+      border: 1px solid #f9e906;
+    }
+
+    .card.active .badge {
+      background: #ff0055;
+      color: #ffffff;
+      border-color: #000000;
+    }
+
+    /* Ray Diagram Canvas Container */
+    .canvas-container {
+      background: #000000;
+      border: 4px solid #f9e906;
+      box-shadow: 10px 10px 0px #ff0055, 16px 16px 0px #000000;
+      position: relative;
+      transform: rotate(-0.5deg);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 380px;
+      background: #090a0f;
+    }
+
+    /* Status Readout */
+    .readout {
+      background: #1f212d;
+      color: #ffffff;
+      border: 4px solid #000000;
+      padding: 18px;
+      box-shadow: 8px 8px 0px #f9e906;
+      transform: rotate(1deg);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      gap: 15px;
+      text-align: center;
+    }
+
+    .readout-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .readout-item .title {
+      font-size: 0.75rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #00f0ff;
+    }
+
+    .readout-item .val {
+      font-family: 'Impact', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 1px;
+      color: #ffffff;
+    }
+
+    .readout-item .val.highlight {
+      color: #f9e906;
+      text-shadow: 2px 2px 0px #ff0055;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="rainbow-stripe"></div>
+
+    <header>
+      <h1>Midnight Channel Optics</h1>
+      <p>Geometric Ray Tracing // SIR • LIR • NO IMAGE • LUV • SUV</p>
+    </header>
+
+    <!-- Controls -->
+    <div class="controls">
+      <div class="control-group">
+        <label>Optic Device</label>
+        <div class="btn-group">
+          <button class="btn active" id="btnMirror" onclick="setOpticCategory('mirror')">Mirror</button>
+          <button class="btn" id="btnLens" onclick="setOpticCategory('lens')">Lens</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label>Behavior</label>
+        <div class="btn-group">
+          <button class="btn active" id="btnConverging" onclick="setBehavior('converging')">Converging</button>
+          <button class="btn" id="btnDiverging" onclick="setBehavior('diverging')">Diverging</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label for="objDist">Target Distance (<span id="distVal">220</span> px)</label>
+        <input type="range" id="objDist" min="30" max="380" value="220" oninput="updateVisualizer()">
+      </div>
+    </div>
+
+    <!-- MathJax Formula Panel -->
+    <div class="formula-panel">
+      <div class="formula-box">
+        <h4 id="formulaTitle">Gaussian Lens Equation</h4>
+        <div class="math-expr" id="primaryFormula">$$\frac{1}{f} = \frac{1}{d_o} + \frac{1}{d_i}$$</div>
+        <div class="substitution" id="primarySub">$$\frac{1}{100} = \frac{1}{220} + \frac{1}{183.3}$$</div>
+      </div>
+      <div class="formula-box">
+        <h4>Magnification Formula</h4>
+        <div class="math-expr" id="magFormula">$$m = -\frac{d_i}{d_o} = \frac{h_i}{h_o}$$</div>
+        <div class="substitution" id="magSub">$$m = -\frac{183.3}{220} = -0.83$$</div>
+      </div>
+    </div>
+
+    <!-- Mnemonic Cards -->
+    <div class="mnemonics-grid">
+      <div class="card" id="card-SIR">
+        <h3><span class="acronym">SIR</span> <span class="badge">Converging</span></h3>
+        <p><strong>S</strong>maller, <strong>I</strong>nverted, <strong>R</strong>eal</p>
+        <p style="margin-top: 6px; font-style: italic; color: #888;">Beyond 2F / C (&gt; 2f)</p>
+      </div>
+
+      <div class="card" id="card-LIR">
+        <h3><span class="acronym">LIR</span> <span class="badge">Converging</span></h3>
+        <p><strong>L</strong>arger, <strong>I</strong>nverted, <strong>R</strong>eal</p>
+        <p style="margin-top: 6px; font-style: italic; color: #888;">Between 2F & F (f to 2f)</p>
+      </div>
+
+      <div class="card" id="card-NOIMG">
+        <h3><span class="acronym">NO IMAGE</span> <span class="badge">Converging</span></h3>
+        <p><strong>Parallel Rays</strong></p>
+        <p style="margin-top: 6px; font-style: italic; color: #888;">At Focal Point (do = f)</p>
+      </div>
+
+      <div class="card" id="card-LUV">
+        <h3><span class="acronym">LUV</span> <span class="badge">Converging</span></h3>
+        <p><strong>L</strong>arger, <strong>U</strong>pright, <strong>V</strong>irtual</p>
+        <p style="margin-top: 6px; font-style: italic; color: #888;">Between F & Optic (&lt; f)</p>
+      </div>
+
+      <div class="card" id="card-SUV">
+        <h3><span class="acronym">SUV</span> <span class="badge">Diverging</span></h3>
+        <p><strong>S</strong>maller, <strong>U</strong>pright, <strong>V</strong>irtual</p>
+        <p style="margin-top: 6px; font-style: italic; color: #888;">Diverging (Any distance)</p>
+      </div>
+    </div>
+
+    <!-- Canvas TV Monitor -->
+    <div class="canvas-container">
+      <canvas id="opticsCanvas"></canvas>
+    </div>
+
+    <!-- Readout -->
+    <div class="readout">
+      <div class="readout-item">
+        <span class="title">Active Optic</span>
+        <span class="val highlight" id="activeOptic">Concave Mirror</span>
+      </div>
+      <div class="readout-item">
+        <span class="title">Mnemonic</span>
+        <span class="val highlight" id="activeMnemonic">SIR</span>
+      </div>
+      <div class="readout-item">
+        <span class="title">Image Type</span>
+        <span class="val" id="imgType">Real</span>
+      </div>
+      <div class="readout-item">
+        <span class="title">Orientation</span>
+        <span class="val" id="imgOrient">Inverted</span>
+      </div>
+      <div class="readout-item">
+        <span class="title">Size State</span>
+        <span class="val" id="imgSize">Smaller</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('opticsCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let opticCategory = 'mirror';
+    let behavior = 'converging';
+    const fLength = 100;
+    const objHeight = 60;
+
+    function setOpticCategory(cat) {
+      opticCategory = cat;
+      document.getElementById('btnMirror').classList.toggle('active', cat === 'mirror');
+      document.getElementById('btnLens').classList.toggle('active', cat === 'lens');
+      updateVisualizer();
+    }
+
+    function setBehavior(beh) {
+      behavior = beh;
+      document.getElementById('btnConverging').classList.toggle('active', beh === 'converging');
+      document.getElementById('btnDiverging').classList.toggle('active', beh === 'diverging');
+      updateVisualizer();
+    }
+
+    function resizeCanvas() {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = 380;
+    }
+    window.addEventListener('resize', () => { resizeCanvas(); updateVisualizer(); });
+    resizeCanvas();
+
+    function updateVisualizer() {
+      const doVal = parseFloat(document.getElementById('objDist').value);
+      document.getElementById('distVal').innerText = Math.round(doVal);
+
+      const isConverging = (behavior === 'converging');
+      const f = isConverging ? fLength : -fLength;
+
+      const di = (f * doVal) / (doVal - f);
+      const m = -(di / doVal);
+      const diHeight = (opticCategory === 'lens') ? -(objHeight * (di / doVal)) : (objHeight * m);
+
+      drawScene(doVal, di, diHeight, isConverging);
+      updateMnemonics(doVal, isConverging);
+      updateFormulas(doVal, di, f, m);
+    }
+
+    function updateFormulas(doVal, di, f, m) {
+      const isLens = (opticCategory === 'lens');
+      
+      document.getElementById('formulaTitle').innerText = isLens ? "Thin Lens Formula" : "Mirror Formula";
+      
+      document.getElementById('primaryFormula').innerText = `$$\\frac{1}{f} = \\frac{1}{d_o} + \\frac{1}{d_i}$$`;
+      document.getElementById('magFormula').innerText = `$$m = -\\frac{d_i}{d_o} = \\frac{h_i}{h_o}$$`;
+
+      if (Math.abs(doVal - fLength) < 4 && behavior === 'converging') {
+        document.getElementById('primarySub').innerText = `$$\\frac{1}{${f}} = \\frac{1}{${Math.round(doVal)}} + \\frac{1}{\\infty}$$`;
+        document.getElementById('magSub').innerText = `$$m = \\text{Undefined (Parallel Rays)}$$`;
+      } else {
+        document.getElementById('primarySub').innerText = `$$\\frac{1}{${f}} = \\frac{1}{${Math.round(doVal)}} + \\frac{1}{${di.toFixed(1)}}$$`;
+        document.getElementById('magSub').innerText = `$$m = -\\frac{${di.toFixed(1)}}{${Math.round(doVal)}} = ${m.toFixed(2)}$$`;
+      }
+
+      // Re-render MathJax dynamic expressions
+      if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise([
+          document.getElementById('primaryFormula'),
+          document.getElementById('magFormula'),
+          document.getElementById('primarySub'),
+          document.getElementById('magSub')
+        ]);
+      }
+    }
+
+    function updateMnemonics(doVal, isConverging) {
+      ['SIR', 'LIR', 'NOIMG', 'LUV', 'SUV'].forEach(id => {
+        document.getElementById(`card-${id}`).classList.remove('active');
+      });
+
+      let opticName = "";
+      if (opticCategory === 'mirror') {
+        opticName = isConverging ? "Concave Mirror" : "Convex Mirror";
+      } else {
+        opticName = isConverging ? "Convex Lens" : "Concave Lens";
+      }
+
+      let mnemonic = "", cardId = "", typeStr = "", orientStr = "", sizeStr = "";
+
+      if (!isConverging) {
+        mnemonic = "SUV";
+        cardId = "SUV";
+        typeStr = "Virtual";
+        orientStr = "Upright";
+        sizeStr = "Smaller";
+      } else {
+        if (Math.abs(doVal - fLength) < 4) {
+          mnemonic = "NO IMAGE";
+          cardId = "NOIMG";
+          typeStr = "None (Parallel)";
+          orientStr = "None";
+          sizeStr = "Infinity";
+        } else if (Math.abs(doVal - 2 * fLength) < 3) {
+          mnemonic = "EIR (Equal Size)";
+          cardId = "SIR";
+          typeStr = "Real";
+          orientStr = "Inverted";
+          sizeStr = "Equal Size";
+        } else if (doVal > 2 * fLength) {
+          mnemonic = "SIR";
+          cardId = "SIR";
+          typeStr = "Real";
+          orientStr = "Inverted";
+          sizeStr = "Smaller";
+        } else if (doVal > fLength && doVal < 2 * fLength) {
+          mnemonic = "LIR";
+          cardId = "LIR";
+          typeStr = "Real";
+          orientStr = "Inverted";
+          sizeStr = "Larger";
+        } else if (doVal < fLength) {
+          mnemonic = "LUV";
+          cardId = "LUV";
+          typeStr = "Virtual";
+          orientStr = "Upright";
+          sizeStr = "Larger";
+        }
+      }
+
+      if (cardId && document.getElementById(`card-${cardId}`)) {
+        document.getElementById(`card-${cardId}`).classList.add('active');
+      }
+
+      document.getElementById('activeOptic').innerText = opticName;
+      document.getElementById('activeMnemonic').innerText = mnemonic;
+      document.getElementById('imgType').innerText = typeStr;
+      document.getElementById('imgOrient').innerText = orientStr;
+      document.getElementById('imgSize').innerText = sizeStr;
+    }
+
+    function drawScene(doVal, di, diHeight, isConverging) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const opticX = canvas.width * 0.55;
+      const centerY = canvas.height / 2;
+
+      // Grid Lines
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 30) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      }
+
+      // Principal Axis
+      ctx.beginPath();
+      ctx.strokeStyle = '#f9e906';
+      ctx.lineWidth = 3;
+      ctx.moveTo(0, centerY);
+      ctx.lineTo(canvas.width, centerY);
+      ctx.stroke();
+
+      // Focal & Center Points
+      const fLeft = opticX - fLength;
+      const fRight = opticX + fLength;
+      const cLeft = opticX - 2 * fLength;
+      const cRight = opticX + 2 * fLength;
+
+      drawP4Point(fLeft, centerY, 'F1');
+      drawP4Point(fRight, centerY, 'F2');
+      drawP4Point(cLeft, centerY, opticCategory === 'lens' ? '2F1' : 'C');
+      if (opticCategory === 'lens') drawP4Point(cRight, centerY, '2F2');
+
+      // Optic Element
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#00f0ff';
+      ctx.beginPath();
+
+      if (opticCategory === 'mirror') {
+        const radius = 2 * fLength;
+        if (isConverging) {
+          ctx.arc(opticX - radius, centerY, radius, -Math.PI / 6, Math.PI / 6);
+        } else {
+          ctx.arc(opticX + radius, centerY, radius, Math.PI * 5 / 6, Math.PI * 7 / 6);
+        }
+        ctx.stroke();
+      } else {
+        if (isConverging) {
+          ctx.ellipse(opticX, centerY, 14, 90, 0, 0, 2 * Math.PI);
+        } else {
+          ctx.beginPath();
+          ctx.moveTo(opticX - 14, centerY - 90);
+          ctx.quadraticCurveTo(opticX, centerY, opticX - 14, centerY + 90);
+          ctx.lineTo(opticX + 14, centerY + 90);
+          ctx.quadraticCurveTo(opticX, centerY, opticX + 14, centerY - 90);
+          ctx.closePath();
+        }
+        ctx.stroke();
+      }
+
+      // Object Arrow
+      const objX = opticX - doVal;
+      const objY = centerY - objHeight;
+      drawP4Arrow(objX, centerY, objX, objY, '#f9e906', 'OBJECT');
+
+      const isNoImage = isConverging && Math.abs(doVal - fLength) < 4;
+
+      if (isNoImage) {
+        ctx.lineWidth = 3;
+
+        ctx.beginPath();
+        ctx.strokeStyle = '#ff0055';
+        ctx.moveTo(objX, objY);
+        ctx.lineTo(opticX, objY);
+        if (opticCategory === 'lens') {
+          ctx.lineTo(canvas.width, objY + (canvas.width - opticX) * (objHeight / fLength));
+        } else {
+          ctx.lineTo(0, centerY + (objHeight * (opticX / fLength - 1)));
+        }
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.strokeStyle = '#00f0ff';
+        ctx.moveTo(objX, objY);
+        ctx.lineTo(opticX, centerY);
+        if (opticCategory === 'lens') {
+          ctx.lineTo(canvas.width, centerY + (canvas.width - opticX) * (objHeight / fLength));
+        } else {
+          ctx.lineTo(0, centerY + opticX * (objHeight / fLength));
+        }
+        ctx.stroke();
+
+        ctx.font = '900 18px Montserrat, sans-serif';
+        ctx.fillStyle = '#ff0055';
+        ctx.fillText('NO IMAGE FORMED (PARALLEL RAYS)', opticX + (opticCategory === 'lens' ? 30 : -250), centerY - 110);
+
+      } else {
+        let imgX = (opticCategory === 'lens') ? opticX + di : opticX - di;
+        let imgY = centerY - diHeight;
+
+        const isReal = (opticCategory === 'lens' && di > 0) || (opticCategory === 'mirror' && di > 0);
+        const imgColor = isReal ? '#00ff66' : '#ff0055';
+        drawP4Arrow(imgX, centerY, imgX, imgY, imgColor, 'IMAGE');
+
+        ctx.lineWidth = 2.5;
+
+        // Parallel Ray
+        ctx.beginPath();
+        ctx.strokeStyle = '#ff0055';
+        ctx.moveTo(objX, objY);
+        ctx.lineTo(opticX, objY);
+
+        if (opticCategory === 'lens') {
+          if (isConverging) {
+            ctx.lineTo(canvas.width, objY + (canvas.width - opticX) * ((centerY - objY) / fLength));
+            if (di < 0) {
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.setLineDash([6, 6]);
+              ctx.moveTo(opticX, objY);
+              ctx.lineTo(imgX, imgY);
+            }
+          } else {
+            const slope = (objY - centerY) / fLength;
+            ctx.lineTo(canvas.width, objY + (canvas.width - opticX) * slope);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.setLineDash([6, 6]);
+            ctx.moveTo(opticX, objY);
+            ctx.lineTo(fLeft, centerY);
+          }
+        } else {
+          if (isConverging) {
+            ctx.lineTo(0, centerY + (objHeight * (opticX / fLength - 1)));
+            if (di < 0) {
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.setLineDash([6, 6]);
+              ctx.moveTo(opticX, objY);
+              ctx.lineTo(imgX, imgY);
+            }
+          } else {
+            ctx.lineTo(0, objY - ((opticX / fLength) * objHeight));
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.setLineDash([6, 6]);
+            ctx.moveTo(opticX, objY);
+            ctx.lineTo(fRight, centerY);
+          }
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Central Ray
+        ctx.beginPath();
+        ctx.strokeStyle = '#00f0ff';
+        ctx.moveTo(objX, objY);
+        ctx.lineTo(opticX, centerY);
+
+        if (opticCategory === 'lens') {
+          const slope = (centerY - objY) / (opticX - objX);
+          ctx.lineTo(canvas.width, centerY + slope * (canvas.width - opticX));
+          if (di < 0) {
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.setLineDash([6, 6]);
+            ctx.moveTo(opticX, centerY);
+            ctx.lineTo(imgX, imgY);
+          }
+        } else {
+          const reflectSlope = (centerY - objY) / (opticX - objX);
+          ctx.lineTo(0, centerY + reflectSlope * opticX);
+          if (di < 0) {
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.setLineDash([6, 6]);
+            ctx.moveTo(opticX, centerY);
+            ctx.lineTo(imgX, imgY);
+          }
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    function drawP4Point(x, y, label) {
+      ctx.beginPath();
+      ctx.fillStyle = '#f9e906';
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.arc(x, y, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.font = '900 13px Montserrat, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(label, x - 8, y + 22);
+    }
+
+    function drawP4Arrow(fromX, fromY, toX, toY, color, label) {
+      const headlen = 12;
+      const angle = Math.atan2(toY - fromY, toX - fromX);
+
+      ctx.beginPath();
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 6;
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 4;
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.fillStyle = color;
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.font = '900 12px Montserrat, sans-serif';
+      ctx.fillStyle = color;
+      const textY = toY < fromY ? toY - 12 : toY + 20;
+      ctx.fillText(label, toX - 22, textY);
+    }
+
+    updateVisualizer();
+  </script>
+</body>
+</html>
