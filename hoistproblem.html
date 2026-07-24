@@ -151,11 +151,14 @@
             padding: 15px;
             position: relative;
             overflow: auto;
+            background-color: var(--ppt-bg);
         }
 
+        /* Standard Slide Dimensions */
         .slide-frame {
             width: 100%;
             max-width: 960px;
+            height: 82vh;
             max-height: 82vh;
             background: var(--slide-bg);
             box-shadow: 0 10px 25px rgba(0,0,0,0.3);
@@ -165,6 +168,71 @@
             flex-direction: column;
             padding: 24px 32px;
             overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        /* FULLSCREEN MODE EXPANSION */
+        .stage:fullscreen {
+            background-color: #0f172a;
+            padding: 20px;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .stage:fullscreen .slide-frame {
+            width: 96vw;
+            height: 94vh;
+            max-width: 100%;
+            max-height: 100%;
+            padding: 36px 48px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+            border-radius: 8px;
+            font-size: 1.25rem;
+        }
+
+        .stage:fullscreen .slide-header {
+            font-size: 2.2rem;
+            margin-bottom: 24px;
+            padding-bottom: 10px;
+        }
+
+        .stage:fullscreen .problem-card {
+            font-size: 1.3rem;
+            padding: 24px;
+            line-height: 1.6;
+        }
+
+        .stage:fullscreen .param-box span {
+            font-size: 1.4rem;
+        }
+
+        .stage:fullscreen .param-box strong {
+            font-size: 1rem;
+        }
+
+        .stage:fullscreen .step-title {
+            font-size: 1.15rem;
+        }
+
+        .stage:fullscreen .math-block {
+            font-size: 1.15rem;
+            padding: 8px 14px;
+        }
+
+        .stage:fullscreen .given-list li,
+        .stage:fullscreen .fbd-step-card {
+            font-size: 1.15rem;
+            line-height: 1.6;
+            padding: 14px 18px;
+        }
+
+        .stage:fullscreen table {
+            font-size: 1.15rem !important;
+        }
+
+        .stage:fullscreen table td,
+        .stage:fullscreen table th {
+            padding: 12px 10px !important;
         }
 
         .slide-frame::-webkit-scrollbar {
@@ -420,6 +488,21 @@
         .btn-primary { background: var(--ppt-orange); color: white; }
         .btn-primary:hover { background: #b03e02; }
 
+        .btn-fullscreen {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-fullscreen:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
         .click-hint {
             color: var(--text-muted);
             font-size: 0.82rem;
@@ -446,7 +529,8 @@
             <div class="ppt-icon">P</div>
             <span>Physics_Hoist_Problem_GRESA.pptx - Slide Show</span>
         </div>
-        <div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <button class="btn-fullscreen" id="fullscreenBtn" onclick="toggleFullScreen()">⛶ Fullscreen Slide</button>
             <span class="badge" id="stepIndicator">Step 0 / 0</span>
         </div>
     </div>
@@ -486,7 +570,7 @@
         </div>
 
         <!-- Stage Area -->
-        <div class="stage" onclick="handleStageClick(event)">
+        <div class="stage" id="slideStage" onclick="handleStageClick(event)">
             <!-- SLIDE 0: Problem Statement -->
             <div class="slide-frame" id="slide-0">
                 <div class="slide-header">
@@ -755,9 +839,10 @@
             <button class="btn btn-primary" onclick="nextStep()">Next Step / Reveal ►</button>
         </div>
         <div class="click-hint">
-            <span>💡 Click anywhere on slide or press <strong>SPACEBAR / RIGHT ARROW</strong> to reveal each item</span>
+            <span>💡 Click slide or press <strong>SPACEBAR / RIGHT ARROW</strong> to reveal step. Press <strong>F</strong> for full screen slide.</span>
         </div>
         <div class="btn-group">
+            <button class="btn" onclick="toggleFullScreen()">⛶ Fullscreen Slide</button>
             <button class="btn" onclick="resetPresentation()">↺ Reset</button>
         </div>
     </div>
@@ -767,6 +852,30 @@
     const totalSlides = 7;
     let currentStep = 0;
     let totalStepsOnSlide = 0;
+
+    function toggleFullScreen() {
+        const stage = document.getElementById('slideStage');
+        if (!document.fullscreenElement) {
+            if (stage.requestFullscreen) {
+                stage.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable full-screen mode: ${err.message}`);
+                });
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+        const btnHeader = document.getElementById('fullscreenBtn');
+        if (document.fullscreenElement) {
+            if (btnHeader) btnHeader.innerHTML = '🗗 Exit Fullscreen';
+        } else {
+            if (btnHeader) btnHeader.innerHTML = '⛶ Fullscreen Slide';
+        }
+    });
 
     function getSlideItems(slideIndex) {
         const slide = document.getElementById(`slide-${slideIndex}`);
@@ -858,6 +967,9 @@
         } else if (e.key === "ArrowLeft") {
             e.preventDefault();
             prevStep();
+        } else if (e.key === "f" || e.key === "F") {
+            e.preventDefault();
+            toggleFullScreen();
         }
     });
 
