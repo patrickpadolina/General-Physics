@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics Solution: Electric Hoist & Steel Beam</title>
+
+    <!-- MathJax Configuration & Script -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <style>
+        :root {
+            --ppt-orange: #d04a02;
+            --ppt-dark: #1f1f1f;
+            --ppt-bg: #f3f3f3;
+            --slide-bg: #ffffff;
+            --text-main: #2b2b2b;
+            --text-muted: #666666;
+            --accent-blue: #0078d4;
+            --accent-red: #d13438;
+            --accent-green: #107c41;
+            --accent-orange: #ff8c00;
+            --border-color: #e1e1e1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--ppt-dark);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Top Ribbon Interface */
+        .ppt-ribbon {
+            background-color: var(--ppt-orange);
+            color: white;
+            padding: 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        .ppt-title-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .ppt-icon {
+            width: 24px;
+            height: 24px;
+            background: white;
+            color: var(--ppt-orange);
+            font-weight: 900;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        /* Main Workspace */
+        .workspace {
+            display: flex;
+            flex: 1;
+            background-color: var(--ppt-bg);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Left Slide Thumbnails */
+        .sidebar {
+            width: 220px;
+            background-color: #e6e6e6;
+            border-right: 1px solid var(--border-color);
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .thumb {
+            background: white;
+            border: 2px solid transparent;
+            border-radius: 4px;
+            padding: 8px;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            font-size: 0.75rem;
+        }
+
+        .thumb.active {
+            border-color: var(--ppt-orange);
+            box-shadow: 0 0 0 1px var(--ppt-orange);
+        }
+
+        .thumb-num {
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .thumb-preview {
+            height: 45px;
+            background: #fafafa;
+            border: 1px dashed #ccc;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            font-weight: 600;
+            text-align: center;
+            padding: 2px;
+        }
+
+        /* Stage Area */
+        .stage {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            position: relative;
+            overflow: auto;
+        }
+
+        .slide-frame {
+            width: 100%;
+            max-width: 960px;
+            max-height: 82vh;
+            background: var(--slide-bg);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border-radius: 6px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 32px;
+            overflow-y: auto;
+        }
+
+        .slide-frame::-webkit-scrollbar {
+            width: 6px;
+        }
+        .slide-frame::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        /* Slide Content Styles */
+        .slide-header {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--ppt-dark);
+            margin-bottom: 16px;
+            border-bottom: 3px solid var(--ppt-orange);
+            padding-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .slide-body {
+            flex: 1;
+            display: flex;
+            gap: 20px;
+            position: relative;
+            flex-direction: column;
+        }
+
+        .slide-body.row-layout {
+            flex-direction: row;
+        }
+
+        /* Revealed items animation classes */
+        .reveal-item {
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.35s ease, transform 0.35s ease;
+        }
+
+        .reveal-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Step containers for solution */
+        .step-block {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-left: 4px solid var(--accent-red);
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+        }
+
+        .step-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--ppt-dark);
+            margin-bottom: 4px;
+        }
+
+        .step-flex {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Problem Card */
+        .problem-card {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-left: 5px solid var(--accent-blue);
+            padding: 16px;
+            border-radius: 6px;
+            font-size: 0.98rem;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+
+        .param-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .param-box {
+            background: #edf2f7;
+            padding: 10px 14px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .param-box strong {
+            color: var(--accent-blue);
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .param-box span {
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        /* Canvas Displays */
+        .canvas-container {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            background: #0f172a;
+            border-radius: 8px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        canvas {
+            border-radius: 8px;
+        }
+
+        .fbd-explanation {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .fbd-step-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .fbd-step-card strong {
+            color: var(--ppt-orange);
+        }
+
+        /* GRESA Layouts */
+        .gresa-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .gresa-row {
+            background: #f8fafc;
+            border-left: 5px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 12px 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        }
+
+        .gresa-row.g { border-color: var(--accent-blue); }
+        .gresa-row.r { border-color: var(--accent-orange); }
+        .gresa-row.e { border-color: #8b5cf6; }
+        .gresa-row.s { border-color: var(--accent-red); }
+        .gresa-row.a { border-color: var(--accent-green); }
+
+        .gresa-label {
+            font-size: 0.95rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .gresa-row.g .gresa-label { color: var(--accent-blue); }
+        .gresa-row.r .gresa-label { color: var(--accent-orange); }
+        .gresa-row.e .gresa-label { color: #8b5cf6; }
+        .gresa-row.s .gresa-label { color: var(--accent-red); }
+        .gresa-row.a .gresa-label { color: var(--accent-green); }
+
+        .math-block {
+            background: #f1f5f9;
+            padding: 4px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 2px 0;
+            font-size: 0.92rem;
+        }
+
+        .given-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .given-list li {
+            position: relative;
+            padding-left: 18px;
+            margin-bottom: 6px;
+            line-height: 1.4;
+            font-size: 0.92rem;
+        }
+
+        .given-list li::before {
+            content: "•";
+            color: var(--accent-blue);
+            font-weight: bold;
+            font-size: 1.1rem;
+            position: absolute;
+            left: 0;
+            top: -2px;
+        }
+
+        /* Bottom Presenter Toolbar */
+        .ppt-toolbar {
+            background: white;
+            border-top: 1px solid var(--border-color);
+            padding: 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            background: #e2e8f0;
+            color: #334155;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .btn:hover { background: #cbd5e1; }
+        .btn-primary { background: var(--ppt-orange); color: white; }
+        .btn-primary:hover { background: #b03e02; }
+
+        .click-hint {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .badge {
+            background: var(--ppt-orange);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PowerPoint Header Bar -->
+    <div class="ppt-ribbon">
+        <div class="ppt-title-bar">
+            <div class="ppt-icon">P</div>
+            <span>Physics_Hoist_Problem_GRESA.pptx - Slide Show</span>
+        </div>
+        <div>
+            <span class="badge" id="stepIndicator">Step 0 / 0</span>
+        </div>
+    </div>
+
+    <!-- Workspace Area -->
+    <div class="workspace">
+        <!-- Sidebar Thumbnails -->
+        <div class="sidebar">
+            <div class="thumb active" id="thumb-0" onclick="goToSlide(0)">
+                <div class="thumb-num">1. Problem Statement</div>
+                <div class="thumb-preview">Problem Context</div>
+            </div>
+            <div class="thumb" id="thumb-1" onclick="goToSlide(1)">
+                <div class="thumb-num">2. Visualizer</div>
+                <div class="thumb-preview">Motion Setup</div>
+            </div>
+            <div class="thumb" id="thumb-2" onclick="goToSlide(2)">
+                <div class="thumb-num">3. Build FBD</div>
+                <div class="thumb-preview">Vector Diagram</div>
+            </div>
+            <div class="thumb" id="thumb-3" onclick="goToSlide(3)">
+                <div class="thumb-num">4. GRESA: G & R</div>
+                <div class="thumb-preview">Given & Required</div>
+            </div>
+            <div class="thumb" id="thumb-4" onclick="goToSlide(4)">
+                <div class="thumb-num">5. GRESA: E</div>
+                <div class="thumb-preview">Equations</div>
+            </div>
+            <div class="thumb" id="thumb-5" onclick="goToSlide(5)">
+                <div class="thumb-num">6. GRESA: S</div>
+                <div class="thumb-preview">Solutions</div>
+            </div>
+            <div class="thumb" id="thumb-6" onclick="goToSlide(6)">
+                <div class="thumb-num">7. GRESA: A</div>
+                <div class="thumb-preview">Final Answer</div>
+            </div>
+        </div>
+
+        <!-- Stage Area -->
+        <div class="stage" onclick="handleStageClick(event)">
+            <!-- SLIDE 0: Problem Statement -->
+            <div class="slide-frame" id="slide-0">
+                <div class="slide-header">
+                    <span>Problem Statement</span>
+                    <span style="font-size:0.85rem; color: var(--text-muted);">Context & Specifications</span>
+                </div>
+                <div class="slide-body">
+                    <div class="problem-card reveal-item">
+                        An electric hoist lifts a steel beam vertically at a <strong>constant speed</strong>. The hoist raises the beam through a height of $d = 18.0\text{ m}$ in $t = 12.0\text{ s}$.
+                        <br><br>
+                        The mass of the steel beam is $m = 1500\text{ kg}$. During the lift, the guide rails exert a constant frictional force of $f = 250\text{ N}$ opposing the motion.
+                        <br><br>
+                        <em>Assume acceleration due to gravity $g = 9.81\text{ m/s}^2$.</em>
+                    </div>
+                    <div class="param-grid">
+                        <div class="param-box reveal-item">
+                            <strong>Height Raised ($d$)</strong>
+                            <span>$18.0\text{ m}$</span>
+                        </div>
+                        <div class="param-box reveal-item">
+                            <strong>Time Duration ($t$)</strong>
+                            <span>$12.0\text{ s}$</span>
+                        </div>
+                        <div class="param-box reveal-item">
+                            <strong>Beam Mass ($m$)</strong>
+                            <span>$1500\text{ kg}$</span>
+                        </div>
+                        <div class="param-box reveal-item">
+                            <strong>Frictional Force ($f$)</strong>
+                            <span>$250\text{ N}$</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDE 1: Motion Visualizer -->
+            <div class="slide-frame" id="slide-1" style="display:none;">
+                <div class="slide-header">
+                    <span>Interactive Motion Visualizer</span>
+                    <span style="font-size:0.85rem; color: var(--text-muted);">Constant Velocity Motion</span>
+                </div>
+                <div class="slide-body row-layout">
+                    <div class="canvas-container reveal-item">
+                        <canvas id="motionCanvas" width="300" height="300"></canvas>
+                    </div>
+                    <div class="fbd-explanation">
+                        <div class="fbd-step-card reveal-item">
+                            <strong>1. Vertical Motion:</strong> The hoist applies upward tension on the cable to lift the $1500\text{ kg}$ steel beam.
+                        </div>
+                        <div class="fbd-step-card reveal-item">
+                            <strong>2. Guide Rail Friction:</strong> As the beam moves up, contact with side guide rails produces a downward resistive friction force $f = 250\text{ N}$.
+                        </div>
+                        <div class="fbd-step-card reveal-item">
+                            <strong>3. Zero Acceleration:</strong> Because velocity is constant ($a = 0\text{ m/s}^2$), net vertical force must equal zero according to Newton's 1st Law ($\Sigma F_y = 0$).
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDE 2: Build FBD Step-by-Step -->
+            <div class="slide-frame" id="slide-2" style="display:none;">
+                <div class="slide-header">
+                    <span>Building the Free Body Diagram (FBD)</span>
+                    <span style="font-size:0.85rem; color: var(--text-muted);">Step-by-Step Force Vectors</span>
+                </div>
+                <div class="slide-body row-layout">
+                    <div class="canvas-container">
+                        <canvas id="fbdCanvas" width="300" height="300"></canvas>
+                    </div>
+                    <div class="fbd-explanation">
+                        <div class="fbd-step-card reveal-item" id="fbd-step-1">
+                            <strong>Step 1: Point Mass Core</strong><br>
+                            Represent the $1500\text{ kg}$ steel beam as a central point mass object.
+                        </div>
+                        <div class="fbd-step-card reveal-item" id="fbd-step-2">
+                            <strong>Step 2: Downward Gravity (Weight $W$)</strong><br>
+                            Gravity pulls downward: $W = m \cdot g = (1500\text{ kg})(9.81\text{ m/s}^2) = 14,715\text{ N}$.
+                        </div>
+                        <div class="fbd-step-card reveal-item" id="fbd-step-3">
+                            <strong>Step 3: Downward Friction ($f$)</strong><br>
+                            Guide rails resist upward motion with downward force: $f = 250\text{ N}$.
+                        </div>
+                        <div class="fbd-step-card reveal-item" id="fbd-step-4">
+                            <strong>Step 4: Upward Motor Force ($F_{\text{lift}}$)</strong><br>
+                            To maintain constant velocity, motor tension balances both downward forces:<br>
+                            $F_{\text{lift}} = W + f = 14,715\text{ N} + 250\text{ N} = 14,965\text{ N}$.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDE 3: GRESA - Given & Required -->
+            <div class="slide-frame" id="slide-3" style="display:none;">
+                <div class="slide-header">
+                    <span>GRESA Solution Strategy</span>
+                    <span style="font-size:0.85rem; color: var(--text-muted);">Given & Required</span>
+                </div>
+                <div class="slide-body">
+                    <div class="gresa-container">
+                        <div class="gresa-row g">
+                            <div class="gresa-label">G — Given</div>
+                            <ul class="given-list">
+                                <li class="reveal-item">Beam mass: $m = 1500\text{ kg}$</li>
+                                <li class="reveal-item">Height lifted: $d = 18.0\text{ m}$</li>
+                                <li class="reveal-item">Time duration: $t = 12.0\text{ s}$</li>
+                                <li class="reveal-item">Frictional force: $f = 250\text{ N}$ (downward, opposing motion)</li>
+                                <li class="reveal-item">Gravitational acceleration: $g = 9.81\text{ m/s}^2$</li>
+                                <li class="reveal-item">State of motion: Constant velocity ($a = 0\text{ m/s}^2$)</li>
+                            </ul>
+                        </div>
+                        <div class="gresa-row r reveal-item">
+                            <div class="gresa-label">R — Required</div>
+                            <ol style="margin-left: 18px; line-height: 1.5; font-size: 0.92rem;">
+                                <li>Weight of the steel beam ($W$)</li>
+                                <li>Lifting velocity ($v$)</li>
+                                <li>Total force motor must overcome ($F_{\text{lift}}$)</li>
+                                <li>Power required by the motor ($P$)</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDE 4: GRESA - Equations -->
+            <div class="slide-frame" id="slide-4" style="display:none;">
+                <div class="slide-header">
+                    <span>GRESA Solution Strategy</span>
+                    <span style="font-size:0.85rem; color: var(--text-muted);">Equations</span>
+                </div>
+                <div class="slide-body">
+                    <div class="gresa-container">
+                        <div class="gresa-row e reveal-item">
+                            <div class="gresa-label">E — Equations</div>
+                            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+                                <div class="reveal-item">
+                                    <strong style="font-size:0.9rem;">1. Weight Formula:</strong>
+                                    <div class="math-block">$$W = m \cdot g$$</div>
+                                </div>
+                                <div class="reveal-item">
+                                    <strong style="font-size:0.9rem;">2. Constant Velocity Formula:</strong>
+                                    <div class="math-block">$$v = \frac{d}{t}$$</div>
+                                </div>
+                                <div class="reveal-item">
+                                    <strong style="font-size:0.9rem;">3. Force Balance Equation ($\Sigma F_y = 0$):</strong>
+                                    <div class="math-block">$$\Sigma F_y = F_{\text{lift}} - W - f = 0 \implies F_{\text{lift}} = W + f$$</div>
+                                </div>
+                                <div class="reveal-item">
+                                    <strong style="font-size:0.9rem;">4. Power Formula:</strong>
+                                    <div class="math-block">$$P = F_{\text{lift}} \cdot v$$</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDE 5: GRESA - Solution (Step-by-Step Variables & Values) -->
+            <div class="slide-frame" id="slide-5" style="display:none;">
+                <div class="slide-header">
+                    <span>GRESA Solution Strategy</span>
+                    <span style="font-size:0.85rem; color: var(--text-muted);">Step-by-Step Variable Substitutions</span>
+                </div>
+                <div class="slide-body">
+                    <div class="gresa-container">
+                        <div class="gresa-row s">
+                            <div class="gresa-label">S — Solution</div>
+                            
+                            <!-- STEP 1 -->
+                            <div class="step-block">
+                                <div class="step-title">1. Weight of the Steel Beam ($W$)</div>
+                                <div class="step-flex">
+                                    <span class="reveal-item math-block">Formula: $W = m \cdot g$</span>
+                                    <span class="reveal-item math-block">Substitute: $W = (1500\text{ kg}) \cdot (9.81\text{ m/s}^2)$</span>
+                                    <span class="reveal-item math-block" style="color:var(--accent-red); font-weight:bold;">Result: $W = 14,715\text{ N}$</span>
+                                </div>
+                            </div>
+
+                            <!-- STEP 2 -->
+                            <div class="step-block">
+                                <div class="step-title">2. Lifting Velocity ($v$)</div>
+                                <div class="step-flex">
+                                    <span class="reveal-item math-block">Formula: $v = \frac{d}{t}$</span>
+                                    <span class="reveal-item math-block">Substitute: $v = \frac{18.0\text{ m}}{12.0\text{ s}}$</span>
+                                    <span class="reveal-item math-block" style="color:var(--accent-red); font-weight:bold;">Result: $v = 1.50\text{ m/s}$</span>
+                                </div>
+                            </div>
+
+                            <!-- STEP 3 -->
+                            <div class="step-block">
+                                <div class="step-title">3. Total Motor Lifting Force ($F_{\text{lift}}$)</div>
+                                <div class="step-flex">
+                                    <span class="reveal-item math-block">Formula: $F_{\text{lift}} = W + f$</span>
+                                    <span class="reveal-item math-block">Substitute: $F_{\text{lift}} = 14,715\text{ N} + 250\text{ N}$</span>
+                                    <span class="reveal-item math-block" style="color:var(--accent-red); font-weight:bold;">Result: $F_{\text{lift}} = 14,965\text{ N}$</span>
+                                </div>
+                            </div>
+
+                            <!-- STEP 4 -->
+                            <div class="step-block">
+                                <div class="step-title">4. Required Motor Power Output ($P$)</div>
+                                <div class="step-flex">
+                                    <span class="reveal-item math-block">Formula: $P = F_{\text{lift}} \cdot v$</span>
+                                    <span class="reveal-item math-block">Substitute: $P = (14,965\text{ N}) \cdot (1.50\text{ m/s})$</span>
+                                    <span class="reveal-item math-block" style="color:var(--accent-red); font-weight:bold;">Result: $P = 22,447.5\text{ W}$</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDE 6: GRESA - Final Answer -->
+            <div class="slide-frame" id="slide-6" style="display:none;">
+                <div class="slide-header">
+                    <span>GRESA Solution Strategy</span>
+                    <span style="font-size:0.85rem; color: var(--text-muted);">Final Answers</span>
+                </div>
+                <div class="slide-body">
+                    <div class="gresa-container">
+                        <div class="gresa-row a reveal-item">
+                            <div class="gresa-label">A — Answer</div>
+                            <table style="width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 0.9rem;">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid var(--accent-green); text-align: left;">
+                                        <th style="padding: 6px;">Parameter Required</th>
+                                        <th style="padding: 6px;">Calculated Value</th>
+                                        <th style="padding: 6px;">Formatted / Alternate Units</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="reveal-item" style="border-bottom: 1px solid #e2e8f0;">
+                                        <td style="padding: 8px 6px;"><strong>1. Weight of steel beam ($W$)</strong></td>
+                                        <td style="padding: 8px 6px; color: var(--accent-green); font-weight: bold;">$14,715\text{ N}$</td>
+                                        <td style="padding: 8px 6px;">$14.72\text{ kN}$</td>
+                                    </tr>
+                                    <tr class="reveal-item" style="border-bottom: 1px solid #e2e8f0;">
+                                        <td style="padding: 8px 6px;"><strong>2. Lifting velocity ($v$)</strong></td>
+                                        <td style="padding: 8px 6px; color: var(--accent-green); font-weight: bold;">$1.50\text{ m/s}$</td>
+                                        <td style="padding: 8px 6px;">$90\text{ m/min}$</td>
+                                    </tr>
+                                    <tr class="reveal-item" style="border-bottom: 1px solid #e2e8f0;">
+                                        <td style="padding: 8px 6px;"><strong>3. Total motor force ($F_{\text{lift}}$)</strong></td>
+                                        <td style="padding: 8px 6px; color: var(--accent-green); font-weight: bold;">$14,965\text{ N}$</td>
+                                        <td style="padding: 8px 6px;">$14.97\text{ kN}$</td>
+                                    </tr>
+                                    <tr class="reveal-item">
+                                        <td style="padding: 8px 6px;"><strong>4. Power required ($P$)</strong></td>
+                                        <td style="padding: 8px 6px; color: var(--accent-green); font-weight: bold;">$22,447.5\text{ W}$</td>
+                                        <td style="padding: 8px 6px;"><strong>$22.45\text{ kW}$</strong> ($\approx 30.1\text{ HP}$)</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="ppt-toolbar">
+        <div class="btn-group">
+            <button class="btn" onclick="prevStep()">◄ Prev Step</button>
+            <button class="btn btn-primary" onclick="nextStep()">Next Step / Reveal ►</button>
+        </div>
+        <div class="click-hint">
+            <span>💡 Click anywhere on slide or press <strong>SPACEBAR / RIGHT ARROW</strong> to reveal each item</span>
+        </div>
+        <div class="btn-group">
+            <button class="btn" onclick="resetPresentation()">↺ Reset</button>
+        </div>
+    </div>
+
+<script>
+    let currentSlide = 0;
+    const totalSlides = 7;
+    let currentStep = 0;
+    let totalStepsOnSlide = 0;
+
+    function getSlideItems(slideIndex) {
+        const slide = document.getElementById(`slide-${slideIndex}`);
+        return slide.querySelectorAll('.reveal-item');
+    }
+
+    function updateStepIndicator() {
+        document.getElementById('stepIndicator').innerText = `Slide ${currentSlide + 1} of ${totalSlides} | Step ${currentStep} of ${totalStepsOnSlide}`;
+    }
+
+    function goToSlide(slideIndex) {
+        for (let i = 0; i < totalSlides; i++) {
+            document.getElementById(`slide-${i}`).style.display = 'none';
+            document.getElementById(`thumb-${i}`).classList.remove('active');
+        }
+
+        currentSlide = slideIndex;
+        const activeSlide = document.getElementById(`slide-${currentSlide}`);
+        activeSlide.style.display = 'flex';
+        document.getElementById(`thumb-${currentSlide}`).classList.add('active');
+
+        const items = getSlideItems(currentSlide);
+        totalStepsOnSlide = items.length;
+        currentStep = 0;
+
+        items.forEach(item => item.classList.remove('visible'));
+
+        updateStepIndicator();
+
+        if (window.MathJax) {
+            MathJax.typesetPromise();
+        }
+
+        if (currentSlide === 1) drawMotionCanvas();
+        if (currentSlide === 2) drawFBDCanvas(0);
+    }
+
+    function nextStep() {
+        const items = getSlideItems(currentSlide);
+        if (currentStep < items.length) {
+            items[currentStep].classList.add('visible');
+            currentStep++;
+
+            if (currentSlide === 2) {
+                drawFBDCanvas(currentStep);
+            }
+            updateStepIndicator();
+        } else {
+            if (currentSlide < totalSlides - 1) {
+                goToSlide(currentSlide + 1);
+                nextStep();
+            }
+        }
+    }
+
+    function prevStep() {
+        const items = getSlideItems(currentSlide);
+        if (currentStep > 0) {
+            currentStep--;
+            items[currentStep].classList.remove('visible');
+
+            if (currentSlide === 2) {
+                drawFBDCanvas(currentStep);
+            }
+            updateStepIndicator();
+        } else if (currentSlide > 0) {
+            goToSlide(currentSlide - 1);
+            const prevItems = getSlideItems(currentSlide);
+            currentStep = prevItems.length;
+            prevItems.forEach(item => item.classList.add('visible'));
+            if (currentSlide === 2) drawFBDCanvas(currentStep);
+            updateStepIndicator();
+        }
+    }
+
+    function handleStageClick(event) {
+        if (event.target.tagName === 'BUTTON' || event.target.closest('.sidebar')) return;
+        nextStep();
+    }
+
+    function resetPresentation() {
+        goToSlide(0);
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === "ArrowRight" || e.key === " " || e.key === "Enter") {
+            e.preventDefault();
+            nextStep();
+        } else if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            prevStep();
+        }
+    });
+
+    // Motion Visualizer Canvas
+    let animY = 220;
+    let animDir = -1;
+    function drawMotionCanvas() {
+        if (currentSlide !== 1) return;
+        const canvas = document.getElementById('motionCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.strokeStyle = "#475569";
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(50, 20); ctx.lineTo(50, 280);
+        ctx.moveTo(250, 20); ctx.lineTo(250, 280);
+        ctx.stroke();
+
+        animY += animDir * 0.7;
+        if (animY < 60 || animY > 220) animDir *= -1;
+
+        ctx.strokeStyle = "#cbd5e1";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(150, 0); ctx.lineTo(150, animY);
+        ctx.stroke();
+
+        ctx.fillStyle = "#38bdf8";
+        ctx.fillRect(40, animY, 220, 24);
+        ctx.strokeStyle = "#0284c7";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(40, animY, 220, 24);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 11px sans-serif";
+        ctx.fillText("STEEL BEAM (1500 kg)", 80, animY + 16);
+
+        requestAnimationFrame(drawMotionCanvas);
+    }
+
+    // Step-by-Step FBD Canvas
+    function drawFBDCanvas(step) {
+        const canvas = document.getElementById('fbdCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const cX = 150;
+        const cY = 150;
+
+        if (step >= 1) {
+            ctx.fillStyle = "#38bdf8";
+            ctx.beginPath();
+            ctx.arc(cX, cY, 12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 11px sans-serif";
+            ctx.fillText("m = 1500kg", cX - 30, cY - 18);
+        }
+
+        if (step >= 2) {
+            drawArrow(ctx, cX - 10, cY, cX - 10, cY + 100, "#f87171", "W = 14,715 N");
+        }
+
+        if (step >= 3) {
+            drawArrow(ctx, cX + 10, cY, cX + 10, cY + 45, "#fb923c", "f = 250 N");
+        }
+
+        if (step >= 4) {
+            drawArrow(ctx, cX, cY, cX, cY - 110, "#38bdf8", "F_lift = 14,965 N");
+        }
+    }
+
+    function drawArrow(ctx, fromx, fromy, tox, toy, color, text) {
+        const headlen = 8;
+        const dx = tox - fromx;
+        const dy = toy - fromy;
+        const angle = Math.atan2(dy, dx);
+
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 3;
+
+        ctx.beginPath();
+        ctx.moveTo(fromx, fromy);
+        ctx.lineTo(tox, toy);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(tox, toy);
+        ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fill();
+
+        if (text) {
+            ctx.font = "bold 11px sans-serif";
+            if (dy < 0) {
+                ctx.fillText(text, tox + 10, toy + 15);
+            } else {
+                ctx.fillText(text, tox + 10, toy - 5);
+            }
+        }
+    }
+
+    goToSlide(0);
+</script>
+
+</body>
+</html>
