@@ -48,13 +48,14 @@
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            font-size: 1.1rem; /* Scaled up default body size */
         }
 
         /* Top Ribbon Interface */
         .ppt-ribbon {
             background-color: var(--ppt-orange);
             color: white;
-            padding: 8px 20px;
+            padding: 10px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -67,13 +68,13 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            font-size: 0.95rem;
+            font-size: 1.15rem;
             font-weight: 600;
         }
 
         .ppt-icon {
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             background: white;
             color: var(--ppt-orange);
             font-weight: 900;
@@ -81,7 +82,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: 16px;
         }
 
         /* Main Workspace */
@@ -95,13 +96,13 @@
 
         /* Left Slide Thumbnails */
         .sidebar {
-            width: 220px;
+            width: 240px;
             background-color: #e6e6e6;
             border-right: 1px solid var(--border-color);
-            padding: 12px 8px;
+            padding: 14px 10px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
             overflow-y: auto;
             flex-shrink: 0;
         }
@@ -109,12 +110,12 @@
         .thumb {
             background: white;
             border: 2px solid transparent;
-            border-radius: 4px;
-            padding: 8px;
+            border-radius: 6px;
+            padding: 10px;
             cursor: pointer;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             transition: all 0.2s;
-            font-size: 0.75rem;
+            font-size: 0.95rem;
         }
 
         .thumb.active {
@@ -124,22 +125,23 @@
 
         .thumb-num {
             color: var(--text-muted);
-            font-weight: 600;
-            margin-bottom: 4px;
+            font-weight: 700;
+            margin-bottom: 6px;
         }
 
         .thumb-preview {
-            height: 45px;
+            height: 50px;
             background: #fafafa;
             border: 1px dashed #ccc;
-            border-radius: 2px;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #888;
+            color: #777;
             font-weight: 600;
             text-align: center;
-            padding: 2px;
+            padding: 4px;
+            font-size: 0.85rem;
         }
 
         /* Stage Area */
@@ -148,33 +150,34 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 15px;
+            padding: 20px;
             position: relative;
             overflow: auto;
             background-color: var(--ppt-bg);
         }
 
-        /* Standard Slide Dimensions */
+        /* Standard Slide Dimensions & Increased Base Text Sizes */
         .slide-frame {
             width: 100%;
-            max-width: 960px;
-            height: 82vh;
-            max-height: 82vh;
+            max-width: 1020px;
+            height: 84vh;
+            max-height: 84vh;
             background: var(--slide-bg);
             box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            border-radius: 6px;
+            border-radius: 8px;
             position: relative;
             display: flex;
             flex-direction: column;
-            padding: 24px 32px;
+            padding: 32px 40px;
             overflow-y: auto;
             transition: all 0.3s ease;
+            font-size: 1.15rem; /* Increased default slide text size */
         }
 
-        /* FULLSCREEN MODE EXPANSION */
+        /* FULLSCREEN MODE EXPANSION & LARGE TEXT SCALING */
         .stage:fullscreen {
             background-color: #0f172a;
-            padding: 20px;
+            padding: 24px;
             width: 100vw;
             height: 100vh;
         }
@@ -184,73 +187,78 @@
             height: 94vh;
             max-width: 100%;
             max-height: 100%;
-            padding: 36px 48px;
+            padding: 48px 64px;
             box-shadow: 0 25px 60px rgba(0,0,0,0.8);
-            border-radius: 8px;
-            font-size: 1.25rem;
+            border-radius: 12px;
+            font-size: 1.55rem; /* Extra large slide text in fullscreen */
         }
 
         .stage:fullscreen .slide-header {
-            font-size: 2.2rem;
-            margin-bottom: 24px;
-            padding-bottom: 10px;
+            font-size: 2.75rem;
+            margin-bottom: 30px;
+            padding-bottom: 14px;
+        }
+
+        .stage:fullscreen .slide-header-sub {
+            font-size: 1.35rem !important;
         }
 
         .stage:fullscreen .problem-card {
-            font-size: 1.3rem;
-            padding: 24px;
+            font-size: 1.6rem;
+            padding: 32px;
             line-height: 1.6;
         }
 
         .stage:fullscreen .param-box span {
-            font-size: 1.4rem;
+            font-size: 1.75rem;
         }
 
         .stage:fullscreen .param-box strong {
-            font-size: 1rem;
+            font-size: 1.25rem;
         }
 
         .stage:fullscreen .step-title {
-            font-size: 1.15rem;
+            font-size: 1.45rem;
         }
 
         .stage:fullscreen .math-block {
-            font-size: 1.15rem;
-            padding: 8px 14px;
+            font-size: 1.45rem;
+            padding: 10px 18px;
         }
 
         .stage:fullscreen .given-list li,
-        .stage:fullscreen .fbd-step-card {
-            font-size: 1.15rem;
+        .stage:fullscreen .fbd-step-card,
+        .stage:fullscreen .gresa-row ol li {
+            font-size: 1.45rem;
             line-height: 1.6;
-            padding: 14px 18px;
+            padding: 16px 22px;
         }
 
         .stage:fullscreen table {
-            font-size: 1.15rem !important;
+            font-size: 1.45rem !important;
         }
 
         .stage:fullscreen table td,
         .stage:fullscreen table th {
-            padding: 12px 10px !important;
+            padding: 16px 14px !important;
         }
 
         .slide-frame::-webkit-scrollbar {
-            width: 6px;
+            width: 8px;
         }
         .slide-frame::-webkit-scrollbar-thumb {
             background: #cbd5e1;
-            border-radius: 3px;
+            border-radius: 4px;
         }
 
         /* Slide Content Styles */
         .slide-header {
-            font-size: 1.5rem;
+            font-size: 1.9rem;
             font-weight: 700;
             color: var(--ppt-dark);
-            margin-bottom: 16px;
-            border-bottom: 3px solid var(--ppt-orange);
-            padding-bottom: 6px;
+            margin-bottom: 20px;
+            border-bottom: 4px solid var(--ppt-orange);
+            padding-bottom: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -260,7 +268,7 @@
         .slide-body {
             flex: 1;
             display: flex;
-            gap: 20px;
+            gap: 24px;
             position: relative;
             flex-direction: column;
         }
@@ -285,23 +293,23 @@
         .step-block {
             background: #f8fafc;
             border: 1px solid #cbd5e1;
-            border-left: 4px solid var(--accent-red);
-            border-radius: 6px;
-            padding: 10px 14px;
-            margin-bottom: 8px;
+            border-left: 5px solid var(--accent-red);
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-bottom: 12px;
         }
 
         .step-title {
-            font-size: 0.9rem;
+            font-size: 1.15rem;
             font-weight: 700;
             color: var(--ppt-dark);
-            margin-bottom: 4px;
+            margin-bottom: 8px;
         }
 
         .step-flex {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
             flex-wrap: wrap;
         }
 
@@ -309,36 +317,37 @@
         .problem-card {
             background: #f8fafc;
             border: 1px solid #cbd5e1;
-            border-left: 5px solid var(--accent-blue);
-            padding: 16px;
-            border-radius: 6px;
-            font-size: 0.98rem;
-            line-height: 1.5;
-            margin-bottom: 10px;
+            border-left: 6px solid var(--accent-blue);
+            padding: 22px;
+            border-radius: 8px;
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 14px;
         }
 
         .param-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
+            gap: 16px;
         }
 
         .param-box {
             background: #edf2f7;
-            padding: 10px 14px;
-            border-radius: 6px;
+            padding: 14px 18px;
+            border-radius: 8px;
             border: 1px solid #e2e8f0;
         }
 
         .param-box strong {
             color: var(--accent-blue);
             display: block;
-            font-size: 0.8rem;
+            font-size: 0.95rem;
             text-transform: uppercase;
+            letter-spacing: 0.03em;
         }
 
         .param-box span {
-            font-size: 1rem;
+            font-size: 1.35rem;
             font-weight: bold;
         }
 
@@ -364,21 +373,22 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 14px;
             justify-content: center;
         }
 
         .fbd-step-card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            padding: 10px 14px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            line-height: 1.4;
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            line-height: 1.5;
         }
 
         .fbd-step-card strong {
             color: var(--ppt-orange);
+            font-size: 1.15rem;
         }
 
         /* GRESA Layouts */
@@ -386,14 +396,14 @@
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
         }
 
         .gresa-row {
             background: #f8fafc;
-            border-left: 5px solid #cbd5e1;
-            border-radius: 6px;
-            padding: 12px 16px;
+            border-left: 6px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 16px 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.04);
         }
 
@@ -404,14 +414,14 @@
         .gresa-row.a { border-color: var(--accent-green); }
 
         .gresa-label {
-            font-size: 0.95rem;
+            font-size: 1.25rem;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
         .gresa-row.g .gresa-label { color: var(--accent-blue); }
@@ -422,11 +432,11 @@
 
         .math-block {
             background: #f1f5f9;
-            padding: 4px 10px;
-            border-radius: 4px;
+            padding: 6px 14px;
+            border-radius: 6px;
             display: inline-block;
-            margin: 2px 0;
-            font-size: 0.92rem;
+            margin: 4px 0;
+            font-size: 1.15rem;
         }
 
         .given-list {
@@ -436,17 +446,17 @@
 
         .given-list li {
             position: relative;
-            padding-left: 18px;
-            margin-bottom: 6px;
-            line-height: 1.4;
-            font-size: 0.92rem;
+            padding-left: 22px;
+            margin-bottom: 8px;
+            line-height: 1.5;
+            font-size: 1.15rem;
         }
 
         .given-list li::before {
             content: "•";
             color: var(--accent-blue);
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 1.4rem;
             position: absolute;
             left: 0;
             top: -2px;
@@ -456,7 +466,7 @@
         .ppt-toolbar {
             background: white;
             border-top: 1px solid var(--border-color);
-            padding: 8px 20px;
+            padding: 10px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -465,7 +475,7 @@
 
         .btn-group {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             align-items: center;
         }
 
@@ -473,15 +483,15 @@
             background: #e2e8f0;
             color: #334155;
             border: none;
-            padding: 6px 14px;
-            border-radius: 4px;
+            padding: 8px 18px;
+            border-radius: 6px;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             transition: all 0.2s;
-            font-size: 0.85rem;
+            font-size: 1rem;
         }
 
         .btn:hover { background: #cbd5e1; }
@@ -492,9 +502,10 @@
             background: rgba(255, 255, 255, 0.2);
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.4);
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-size: 0.8rem;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
             cursor: pointer;
             transition: background 0.2s;
         }
@@ -505,18 +516,18 @@
 
         .click-hint {
             color: var(--text-muted);
-            font-size: 0.82rem;
+            font-size: 0.95rem;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
         .badge {
             background: var(--ppt-orange);
             color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.9rem;
             font-weight: bold;
         }
     </style>
@@ -529,7 +540,7 @@
             <div class="ppt-icon">P</div>
             <span>Physics_Hoist_Problem_GRESA.pptx - Slide Show</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
             <button class="btn-fullscreen" id="fullscreenBtn" onclick="toggleFullScreen()">⛶ Fullscreen Slide</button>
             <span class="badge" id="stepIndicator">Step 0 / 0</span>
         </div>
@@ -575,7 +586,7 @@
             <div class="slide-frame" id="slide-0">
                 <div class="slide-header">
                     <span>Problem Statement</span>
-                    <span style="font-size:0.85rem; color: var(--text-muted);">Context & Specifications</span>
+                    <span class="slide-header-sub" style="font-size:1.05rem; color: var(--text-muted); font-weight: normal;">Context & Specifications</span>
                 </div>
                 <div class="slide-body">
                     <div class="problem-card reveal-item">
@@ -610,7 +621,7 @@
             <div class="slide-frame" id="slide-1" style="display:none;">
                 <div class="slide-header">
                     <span>Interactive Motion Visualizer</span>
-                    <span style="font-size:0.85rem; color: var(--text-muted);">Constant Velocity Motion</span>
+                    <span class="slide-header-sub" style="font-size:1.05rem; color: var(--text-muted); font-weight: normal;">Constant Velocity Motion</span>
                 </div>
                 <div class="slide-body row-layout">
                     <div class="canvas-container reveal-item">
@@ -634,7 +645,7 @@
             <div class="slide-frame" id="slide-2" style="display:none;">
                 <div class="slide-header">
                     <span>Building the Free Body Diagram (FBD)</span>
-                    <span style="font-size:0.85rem; color: var(--text-muted);">Step-by-Step Force Vectors</span>
+                    <span class="slide-header-sub" style="font-size:1.05rem; color: var(--text-muted); font-weight: normal;">Step-by-Step Force Vectors</span>
                 </div>
                 <div class="slide-body row-layout">
                     <div class="canvas-container">
@@ -666,7 +677,7 @@
             <div class="slide-frame" id="slide-3" style="display:none;">
                 <div class="slide-header">
                     <span>GRESA Solution Strategy</span>
-                    <span style="font-size:0.85rem; color: var(--text-muted);">Given & Required</span>
+                    <span class="slide-header-sub" style="font-size:1.05rem; color: var(--text-muted); font-weight: normal;">Given & Required</span>
                 </div>
                 <div class="slide-body">
                     <div class="gresa-container">
@@ -683,7 +694,7 @@
                         </div>
                         <div class="gresa-row r reveal-item">
                             <div class="gresa-label">R — Required</div>
-                            <ol style="margin-left: 18px; line-height: 1.5; font-size: 0.92rem;">
+                            <ol style="margin-left: 24px; line-height: 1.6; font-size: 1.15rem;">
                                 <li>Weight of the steel beam ($W$)</li>
                                 <li>Lifting velocity ($v$)</li>
                                 <li>Total force motor must overcome ($F_{\text{lift}}$)</li>
@@ -698,27 +709,27 @@
             <div class="slide-frame" id="slide-4" style="display:none;">
                 <div class="slide-header">
                     <span>GRESA Solution Strategy</span>
-                    <span style="font-size:0.85rem; color: var(--text-muted);">Equations</span>
+                    <span class="slide-header-sub" style="font-size:1.05rem; color: var(--text-muted); font-weight: normal;">Equations</span>
                 </div>
                 <div class="slide-body">
                     <div class="gresa-container">
                         <div class="gresa-row e reveal-item">
                             <div class="gresa-label">E — Equations</div>
-                            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+                            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 6px;">
                                 <div class="reveal-item">
-                                    <strong style="font-size:0.9rem;">1. Weight Formula:</strong>
+                                    <strong style="font-size:1.1rem;">1. Weight Formula:</strong>
                                     <div class="math-block">$$W = m \cdot g$$</div>
                                 </div>
                                 <div class="reveal-item">
-                                    <strong style="font-size:0.9rem;">2. Constant Velocity Formula:</strong>
+                                    <strong style="font-size:1.1rem;">2. Constant Velocity Formula:</strong>
                                     <div class="math-block">$$v = \frac{d}{t}$$</div>
                                 </div>
                                 <div class="reveal-item">
-                                    <strong style="font-size:0.9rem;">3. Force Balance Equation ($\Sigma F_y = 0$):</strong>
+                                    <strong style="font-size:1.1rem;">3. Force Balance Equation ($\Sigma F_y = 0$):</strong>
                                     <div class="math-block">$$\Sigma F_y = F_{\text{lift}} - W - f = 0 \implies F_{\text{lift}} = W + f$$</div>
                                 </div>
                                 <div class="reveal-item">
-                                    <strong style="font-size:0.9rem;">4. Power Formula:</strong>
+                                    <strong style="font-size:1.1rem;">4. Power Formula:</strong>
                                     <div class="math-block">$$P = F_{\text{lift}} \cdot v$$</div>
                                 </div>
                             </div>
@@ -731,7 +742,7 @@
             <div class="slide-frame" id="slide-5" style="display:none;">
                 <div class="slide-header">
                     <span>GRESA Solution Strategy</span>
-                    <span style="font-size:0.85rem; color: var(--text-muted);">Step-by-Step Variable Substitutions</span>
+                    <span class="slide-header-sub" style="font-size:1.05rem; color: var(--text-muted); font-weight: normal;">Step-by-Step Variable Substitutions</span>
                 </div>
                 <div class="slide-body">
                     <div class="gresa-container">
@@ -787,40 +798,40 @@
             <div class="slide-frame" id="slide-6" style="display:none;">
                 <div class="slide-header">
                     <span>GRESA Solution Strategy</span>
-                    <span style="font-size:0.85rem; color: var(--text-muted);">Final Answers</span>
+                    <span class="slide-header-sub" style="font-size:1.05rem; color: var(--text-muted); font-weight: normal;">Final Answers</span>
                 </div>
                 <div class="slide-body">
                     <div class="gresa-container">
                         <div class="gresa-row a reveal-item">
                             <div class="gresa-label">A — Answer</div>
-                            <table style="width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 0.9rem;">
+                            <table style="width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 1.15rem;">
                                 <thead>
-                                    <tr style="border-bottom: 2px solid var(--accent-green); text-align: left;">
-                                        <th style="padding: 6px;">Parameter Required</th>
-                                        <th style="padding: 6px;">Calculated Value</th>
-                                        <th style="padding: 6px;">Formatted / Alternate Units</th>
+                                    <tr style="border-bottom: 3px solid var(--accent-green); text-align: left;">
+                                        <th style="padding: 10px;">Parameter Required</th>
+                                        <th style="padding: 10px;">Calculated Value</th>
+                                        <th style="padding: 10px;">Formatted / Alternate Units</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr class="reveal-item" style="border-bottom: 1px solid #e2e8f0;">
-                                        <td style="padding: 8px 6px;"><strong>1. Weight of steel beam ($W$)</strong></td>
-                                        <td style="padding: 8px 6px; color: var(--accent-green); font-weight: bold;">$14,715\text{ N}$</td>
-                                        <td style="padding: 8px 6px;">$14.72\text{ kN}$</td>
+                                        <td style="padding: 12px 10px;"><strong>1. Weight of steel beam ($W$)</strong></td>
+                                        <td style="padding: 12px 10px; color: var(--accent-green); font-weight: bold;">$14,715\text{ N}$</td>
+                                        <td style="padding: 12px 10px;">$14.72\text{ kN}$</td>
                                     </tr>
                                     <tr class="reveal-item" style="border-bottom: 1px solid #e2e8f0;">
-                                        <td style="padding: 8px 6px;"><strong>2. Lifting velocity ($v$)</strong></td>
-                                        <td style="padding: 8px 6px; color: var(--accent-green); font-weight: bold;">$1.50\text{ m/s}$</td>
-                                        <td style="padding: 8px 6px;">$90\text{ m/min}$</td>
+                                        <td style="padding: 12px 10px;"><strong>2. Lifting velocity ($v$)</strong></td>
+                                        <td style="padding: 12px 10px; color: var(--accent-green); font-weight: bold;">$1.50\text{ m/s}$</td>
+                                        <td style="padding: 12px 10px;">$90\text{ m/min}$</td>
                                     </tr>
                                     <tr class="reveal-item" style="border-bottom: 1px solid #e2e8f0;">
-                                        <td style="padding: 8px 6px;"><strong>3. Total motor force ($F_{\text{lift}}$)</strong></td>
-                                        <td style="padding: 8px 6px; color: var(--accent-green); font-weight: bold;">$14,965\text{ N}$</td>
-                                        <td style="padding: 8px 6px;">$14.97\text{ kN}$</td>
+                                        <td style="padding: 12px 10px;"><strong>3. Total motor force ($F_{\text{lift}}$)</strong></td>
+                                        <td style="padding: 12px 10px; color: var(--accent-green); font-weight: bold;">$14,965\text{ N}$</td>
+                                        <td style="padding: 12px 10px;">$14.97\text{ kN}$</td>
                                     </tr>
                                     <tr class="reveal-item">
-                                        <td style="padding: 8px 6px;"><strong>4. Power required ($P$)</strong></td>
-                                        <td style="padding: 8px 6px; color: var(--accent-green); font-weight: bold;">$22,447.5\text{ W}$</td>
-                                        <td style="padding: 8px 6px;"><strong>$22.45\text{ kW}$</strong> ($\approx 30.1\text{ HP}$)</td>
+                                        <td style="padding: 12px 10px;"><strong>4. Power required ($P$)</strong></td>
+                                        <td style="padding: 12px 10px; color: var(--accent-green); font-weight: bold;">$22,447.5\text{ W}$</td>
+                                        <td style="padding: 12px 10px;"><strong>$22.45\text{ kW}$</strong> ($\approx 30.1\text{ HP}$)</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1005,8 +1016,8 @@
         ctx.strokeRect(40, animY, 220, 24);
 
         ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 11px sans-serif";
-        ctx.fillText("STEEL BEAM (1500 kg)", 80, animY + 16);
+        ctx.font = "bold 13px sans-serif";
+        ctx.fillText("STEEL BEAM (1500 kg)", 75, animY + 16);
 
         requestAnimationFrame(drawMotionCanvas);
     }
@@ -1023,15 +1034,15 @@
         if (step >= 1) {
             ctx.fillStyle = "#38bdf8";
             ctx.beginPath();
-            ctx.arc(cX, cY, 12, 0, Math.PI * 2);
+            ctx.arc(cX, cY, 14, 0, Math.PI * 2);
             ctx.fill();
             ctx.strokeStyle = "#ffffff";
             ctx.lineWidth = 2;
             ctx.stroke();
 
             ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 11px sans-serif";
-            ctx.fillText("m = 1500kg", cX - 30, cY - 18);
+            ctx.font = "bold 12px sans-serif";
+            ctx.fillText("m = 1500kg", cX - 32, cY - 20);
         }
 
         if (step >= 2) {
@@ -1070,7 +1081,7 @@
         ctx.fill();
 
         if (text) {
-            ctx.font = "bold 11px sans-serif";
+            ctx.font = "bold 12px sans-serif";
             if (dy < 0) {
                 ctx.fillText(text, tox + 10, toy + 15);
             } else {
