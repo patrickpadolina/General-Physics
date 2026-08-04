@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crash Visualizer</title>
+    
+    <!-- Retro Pixel Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Pokémon Emerald Palette */
+            --emerald-bg: #032b1a;
+            --emerald-primary: #00a86b;
+            --emerald-dark: #005c3b;
+            --emerald-light: #52e396;
+            --emerald-border: #011d12;
+            
+            --gba-screen-bg: #102015;
+            
+            --vehicle-a: #e63946;   /* Magma Red */
+            --vehicle-b: #1d3557;   /* Aqua Blue */
+            --skid-color: #e9c46a;  /* Sand Yellow */
+            --post-color: #9d4edd;  /* Rayquaza Purple */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Press Start 2P', monospace;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        body {
+            background-color: var(--emerald-bg);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            background-image: 
+                radial-gradient(var(--emerald-dark) 15%, transparent 16%),
+                radial-gradient(var(--emerald-dark) 15%, transparent 16%);
+            background-size: 16px 16px;
+            background-position: 0 0, 8px 8px;
+        }
+
+        .gba-wrapper {
+            width: 100%;
+            max-width: 800px;
+            background: linear-gradient(135deg, var(--emerald-primary) 0%, var(--emerald-dark) 100%);
+            border: 8px solid var(--emerald-border);
+            border-radius: 20px 20px 50px 20px;
+            padding: 24px;
+            box-shadow: 
+                0 12px 0px #002919,
+                0 20px 25px rgba(0, 0, 0, 0.7);
+            position: relative;
+        }
+
+        /* GBA Outer Branding */
+        .gba-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            border-bottom: 4px solid var(--emerald-border);
+            padding-bottom: 8px;
+        }
+
+        .gba-title {
+            font-size: 0.75rem;
+            color: #facc15;
+            text-shadow: 2px 2px 0px #000;
+            letter-spacing: 1px;
+        }
+
+        .power-led {
+            width: 10px;
+            height: 10px;
+            background-color: #52e396;
+            border-radius: 50%;
+            border: 2px solid #000;
+            box-shadow: 0 0 8px #52e396;
+        }
+
+        /* Screen Frame */
+        .screen-container {
+            background-color: #1a2e1d;
+            border: 6px solid #08100a;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        /* CRT Scanline Effect */
+        .screen-container::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 420px;
+            background-color: var(--gba-screen-bg);
+            border: 4px solid #305d39;
+        }
+
+        /* Controls / GBA Buttons */
+        .controls-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+        }
+
+        .gba-btn {
+            background: radial-gradient(circle at 30% 30%, #facc15, #ca8a04);
+            border: 3px solid #000;
+            color: #000;
+            padding: 10px 16px;
+            font-size: 0.6rem;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #854d0e;
+            border-radius: 4px;
+        }
+
+        .gba-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #854d0e;
+        }
+
+        .legend-box {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(16, 32, 21, 0.9);
+            border: 2px solid #52e396;
+            padding: 8px;
+            font-size: 0.5rem;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pixel-dot {
+            width: 8px;
+            height: 8px;
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+
+<div class="gba-wrapper">
+    <!-- GBA Top Header -->
+    <div class="gba-header">
+        <div class="gba-title">CRASH VISUALIZER</div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 0.5rem; color: #fff;">POWER</span>
+            <div class="power-led"></div>
+        </div>
+    </div>
+
+    <!-- Screen Canvas Visualizer -->
+    <div class="screen-container">
+        <canvas id="emeraldCanvas"></canvas>
+
+        <div class="legend-box">
+            <div class="legend-row">
+                <div class="pixel-dot" style="background: var(--vehicle-a);"></div>
+                <span>VEHICLE A</span>
+            </div>
+            <div class="legend-row">
+                <div class="pixel-dot" style="background: var(--vehicle-b);"></div>
+                <span>VEHICLE B</span>
+            </div>
+            <div class="legend-row">
+                <div class="pixel-dot" style="background: var(--skid-color);"></div>
+                <span>SKID PATH</span>
+            </div>
+            <div class="legend-row">
+                <div class="pixel-dot" style="background: var(--post-color);"></div>
+                <span>IMPACT TRAJECTORY</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="controls-panel">
+        <span style="font-size: 0.5rem; color: #fff;">PRESS A TO REPLAY SIMULATION</span>
+        <button class="gba-btn" id="replayBtn">BUTTON A [REPLAY]</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('emeraldCanvas');
+    const ctx = canvas.getContext('2d');
+    const replayBtn = document.getElementById('replayBtn');
+
+    ctx.imageSmoothingEnabled = false;
+
+    const SCALE = 4.5;
+    let impactPoint = { x: 0, y: 0 };
+    let animationProgress = 0;
+    let animationId = null;
+
+    const data = {
+        d1: 42,
+        d2: 12,
+        angleDeg: 35
+    };
+
+    function initPositions() {
+        const width = canvas.width = canvas.parentElement.clientWidth;
+        const height = canvas.height = 420;
+
+        impactPoint = {
+            x: Math.floor(width * 0.40),
+            y: Math.floor(height * 0.58)
+        };
+    }
+
+    function drawPixelRoad() {
+        const width = canvas.width;
+        const height = canvas.height;
+        const roadWidth = 90;
+
+        ctx.fillStyle = '#102015';
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.fillStyle = '#183020';
+        for (let x = 0; x < width; x += 16) {
+            for (let y = 0; y < height; y += 16) {
+                if ((x + y) % 32 === 0) {
+                    ctx.fillRect(x, y, 4, 4);
+                }
+            }
+        }
+
+        ctx.fillStyle = '#282828';
+        ctx.fillRect(0, impactPoint.y - roadWidth/2, width, roadWidth);
+        ctx.fillRect(impactPoint.x - roadWidth/2, 0, roadWidth, height);
+
+        ctx.fillStyle = '#e8e8c8';
+        ctx.fillRect(0, impactPoint.y - roadWidth/2 - 2, width, 2);
+        ctx.fillRect(0, impactPoint.y + roadWidth/2, width, 2);
+        ctx.fillRect(impactPoint.x - roadWidth/2 - 2, 0, 2, height);
+        ctx.fillRect(impactPoint.x + roadWidth/2, 0, 2, height);
+
+        ctx.fillStyle = '#f8b010';
+        for (let x = 0; x < width; x += 20) {
+            if (x < impactPoint.x - roadWidth/2 || x > impactPoint.x + roadWidth/2) {
+                ctx.fillRect(x, impactPoint.y - 1, 10, 2);
+            }
+        }
+        for (let y = 0; y < height; y += 20) {
+            if (y < impactPoint.y - roadWidth/2 || y > impactPoint.y + roadWidth/2) {
+                ctx.fillRect(impactPoint.x - 1, y, 2, 10);
+            }
+        }
+    }
+
+    function drawPixelVehicle(x, y, angle, color, label) {
+        ctx.save();
+        ctx.translate(Math.floor(x), Math.floor(y));
+        ctx.rotate(angle);
+
+        ctx.fillStyle = color;
+        ctx.fillRect(-12, -6, 24, 12);
+
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-12, -6, 24, 12);
+
+        ctx.fillStyle = '#88d8b0';
+        ctx.fillRect(2, -4, 4, 8);
+
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-10, -8, 5, 2);
+        ctx.fillRect(5, -8, 5, 2);
+        ctx.fillRect(-10, 6, 5, 2);
+        ctx.fillRect(5, 6, 5, 2);
+
+        ctx.restore();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '8px "Press Start 2P"';
+        ctx.fillText(label, x - 16, y - 12);
+    }
+
+    function drawScene(t) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawPixelRoad();
+
+        const pA_start = { x: impactPoint.x - data.d1 * SCALE, y: impactPoint.y };
+        const pB_start = { x: impactPoint.x, y: impactPoint.y + 25 * SCALE };
+
+        ctx.fillStyle = '#e9c46a';
+        for (let px = pA_start.x; px < impactPoint.x; px += 4) {
+            ctx.fillRect(px, impactPoint.y - 3, 2, 2);
+            ctx.fillRect(px, impactPoint.y + 2, 2, 2);
+        }
+
+        const rad = -data.angleDeg * (Math.PI / 180);
+        const postEndX = impactPoint.x + (data.d2 * SCALE) * Math.cos(rad);
+        const postEndY = impactPoint.y + (data.d2 * SCALE) * Math.sin(rad);
+
+        ctx.strokeStyle = '#9d4edd';
+        ctx.lineWidth = 4;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(impactPoint.x, impactPoint.y);
+        ctx.lineTo(postEndX, postEndY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (t <= 0.6) {
+            const phaseT = t / 0.6;
+            const currAx = pA_start.x + (impactPoint.x - pA_start.x) * phaseT;
+            drawPixelVehicle(currAx, pA_start.y, 0, '#e63946', 'A');
+
+            const currBy = pB_start.y + (impactPoint.y - pB_start.y) * phaseT;
+            drawPixelVehicle(impactPoint.x, currBy, -Math.PI / 2, '#1d3557', 'B');
+        } else {
+            const phaseT = (t - 0.6) / 0.4;
+            const currX = impactPoint.x + (postEndX - impactPoint.x) * phaseT;
+            const currY = impactPoint.y + (postEndY - impactPoint.y) * phaseT;
+
+            drawPixelVehicle(currX, currY, rad, '#9d4edd', 'A+B');
+        }
+    }
+
+    function animate() {
+        animationProgress += 0.006;
+        if (animationProgress > 1) animationProgress = 1;
+
+        drawScene(animationProgress);
+
+        if (animationProgress < 1) {
+            animationId = requestAnimationFrame(animate);
+        }
+    }
+
+    function startSimulation() {
+        if (animationId) cancelAnimationFrame(animationId);
+        animationProgress = 0;
+        animate();
+    }
+
+    replayBtn.addEventListener('click', startSimulation);
+
+    window.addEventListener('load', () => {
+        initPositions();
+        startSimulation();
+    });
+
+    window.addEventListener('resize', () => {
+        initPositions();
+        drawScene(animationProgress);
+    });
+</script>
+
+</body>
+</html>
