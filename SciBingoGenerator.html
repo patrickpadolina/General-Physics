@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SciBingo Wheel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --blue-primary: #0284c7;
+    --blue-glow: #38bdf8;
+    --yellow-accent: #f59e0b;
+    --green-accent: #10b981;
+    --bg-main: #f0f9ff;
+    --card-bg: rgba(255, 255, 255, 0.92);
+    --text-dark: #0f172a;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --font-heading: 'Fredoka', cursive, sans-serif;
+    --font-body: 'Outfit', system-ui, -apple-system, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-body);
+    margin: 0;
+    background: radial-gradient(circle at 50% 10%, #e0f2fe 0%, #bae6fd 100%);
+    color: var(--text-dark);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    user-select: none;
+  }
+
+  .container {
+    display: flex;
+    width: 100%;
+    max-width: 1400px;
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border: 4px solid #ffffff;
+    border-radius: 32px;
+    overflow: hidden;
+    box-shadow: 0 25px 60px rgba(14, 165, 233, 0.18), inset 0 2px 0 #ffffff;
+  }
+
+  /* Left Panel */
+  .left-panel {
+    flex: 2;
+    background: rgba(255, 255, 255, 0.55);
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .title-row { text-align: center; }
+  h1 {
+    font-family: var(--font-heading);
+    margin: 0;
+    font-size: 48px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #7c3aed 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 0.5px;
+    filter: drop-shadow(0 4px 6px rgba(2, 132, 199, 0.25));
+  }
+  p.lead { 
+    margin: 4px 0 0; 
+    color: var(--text-muted); 
+    font-size: 16px; 
+    font-weight: 500; 
+  }
+
+  /* Interactive Stage Area */
+  .stage-panel {
+    flex: 1;
+    border-radius: 28px;
+    background: #ffffff;
+    border: 3px solid #e0f2fe;
+    box-shadow: 0 12px 35px rgba(2, 132, 199, 0.08);
+    padding: 24px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* 3D Wheel Stage */
+  .wheel-viewport {
+    width: 180px;
+    height: 180px;
+    perspective: 600px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  /* Pointer Needle */
+  .wheel-pointer {
+    position: absolute;
+    top: 0px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-top: 22px solid #ef4444;
+    z-index: 10;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+  }
+
+  /* 3D Wheel Element */
+  .wheel-3d {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    position: relative;
+    border: 5px solid #ffffff;
+    box-shadow: 0 10px 25px rgba(2, 132, 199, 0.3), inset 0 0 15px rgba(0,0,0,0.1);
+    transform: rotateX(25deg);
+    transition: transform 2.5s cubic-bezier(0.15, 0.85, 0.35, 1.2);
+    transform-style: preserve-3d;
+    background: conic-gradient(
+      #38bdf8 0deg 72deg,
+      #3b82f6 72deg 144deg,
+      #8b5cf6 144deg 216deg,
+      #ec4899 216deg 288deg,
+      #f59e0b 288deg 360deg
+    );
+  }
+
+  /* Wheel Center Cap */
+  .wheel-center {
+    font-family: var(--font-heading);
+    position: absolute;
+    width: 46px;
+    height: 46px;
+    background: #ffffff;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: var(--blue-primary);
+    font-size: 15px;
+    border: 3px solid #e0f2fe;
+    letter-spacing: 0.5px;
+  }
+
+  /* Wheel Letter Labels */
+  .wheel-label {
+    font-family: var(--font-heading);
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    left: 50%;
+    top: 50%;
+    margin-left: -16px;
+    margin-top: -16px;
+    color: white;
+    font-size: 26px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 32px;
+    text-shadow: 0 3px 6px rgba(0,0,0,0.4);
+  }
+
+  /* Individual Label Positioning */
+  .label-b { transform: rotate(36deg) translateY(-56px) rotate(-36deg); }
+  .label-i { transform: rotate(108deg) translateY(-56px) rotate(-108deg); }
+  .label-n { transform: rotate(180deg) translateY(-56px) rotate(-180deg); }
+  .label-g { transform: rotate(252deg) translateY(-56px) rotate(-252deg); }
+  .label-o { transform: rotate(324deg) translateY(-56px) rotate(-324deg); }
+
+  /* Content Display */
+  .display-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .topic { 
+    font-family: var(--font-heading);
+    font-size: 22px; 
+    color: var(--blue-primary); 
+    font-weight: 600; 
+    letter-spacing: 0.3px;
+  }
+  
+  .question { 
+    margin-top: 8px; 
+    font-size: 24px; 
+    line-height: 1.35; 
+    font-weight: 700; 
+    color: var(--text-dark); 
+    transition: opacity 0.3s; 
+  }
+
+  .answer { 
+    font-family: var(--font-heading);
+    margin-top: 12px; 
+    font-size: 24px; 
+    color: var(--green-accent); 
+    display: none; 
+    font-weight: 600;
+    animation: fadeIn 0.3s ease;
+  }
+
+  /* 3D Arcade Buttons */
+  .controls {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  button {
+    font-family: var(--font-heading);
+    background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+    color: white;
+    border: none;
+    padding: 14px 26px;
+    border-radius: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 17px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 6px 0 #0369a1, 0 10px 20px rgba(2, 132, 199, 0.25);
+    transition: all 0.1s ease;
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 0 #0369a1, 0 14px 24px rgba(2, 132, 199, 0.35);
+  }
+
+  button:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #0369a1, 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  button.secondary {
+    background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+    color: var(--text-dark);
+    box-shadow: 0 6px 0 #cbd5e1, 0 10px 20px rgba(0, 0, 0, 0.05);
+    border: 2px solid var(--border-color);
+  }
+
+  button.secondary:hover {
+    background: #ffffff;
+    box-shadow: 0 8px 0 #cbd5e1, 0 14px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  button.secondary:active {
+    box-shadow: 0 2px 0 #cbd5e1, 0 4px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* Right Panel */
+  .right-panel {
+    flex: 1;
+    background: #ffffff;
+    border-left: 2px solid #e0f2fe;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .pattern { display: flex; flex-direction: column; align-items: center; }
+  .pattern h2 { 
+    font-family: var(--font-heading);
+    margin: 0 0 2px; 
+    color: var(--blue-primary); 
+    font-size: 26px; 
+    font-weight: 600; 
+  }
+  .pattern-hint { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; font-weight: 500; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(5, 50px);
+    grid-template-rows: repeat(5, 50px);
+    gap: 8px;
+    background: var(--bg-main);
+    padding: 12px;
+    border-radius: 22px;
+    border: 2px solid #bae6fd;
+  }
+
+  /* Interactive Clickable Grid Cells */
+  .cell {
+    font-family: var(--font-heading);
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 0 var(--border-color);
+  }
+
+  .cell:hover { transform: translateY(-2px); }
+  .cell:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--border-color); }
+
+  .cell.free { font-size: 12px; color: var(--blue-primary); font-weight: 700; letter-spacing: 0.5px; }
+
+  .cell.active {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border-color: #ffffff;
+    box-shadow: 0 4px 0 #b45309, 0 6px 15px rgba(245, 158, 11, 0.4);
+    transform: scale(1.05) translateY(-2px);
+  }
+
+  .pattern-meta { 
+    font-family: var(--font-heading);
+    margin-top: 10px; 
+    font-weight: 600; 
+    color: var(--text-dark); 
+    font-size: 17px; 
+  }
+
+  .history { flex: 1; overflow: auto; border-top: 2px solid #f1f5f9; padding-top: 12px; font-size: 14px; color: var(--text-muted); }
+  .history .history-title { 
+    font-family: var(--font-heading);
+    font-weight: 600; 
+    color: var(--text-dark); 
+    font-size: 17px; 
+  }
+  .history .group-title { 
+    font-family: var(--font-heading);
+    color: var(--blue-primary); 
+    font-weight: 600; 
+    margin-top: 10px; 
+    margin-bottom: 4px; 
+    font-size: 15px;
+  }
+  .history-item { margin-left: 8px; margin-bottom: 4px; line-height: 1.35; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  @media (max-width: 980px) {
+    .container { flex-direction: column; }
+    .left-panel, .right-panel { width: 100%; }
+    .stage-panel { flex-direction: column; text-align: center; }
+    .grid { grid-template-columns: repeat(5, 42px); grid-template-rows: repeat(5, 42px); }
+    .cell { width: 42px; height: 42px; font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="left-panel">
+      <div class="title-row">
+        <h1>SciBingo Wheel</h1>
+        <p class="lead">A classroom science bingo randomizer. Roll questions (B, I, N, G, O) and show the SciBingo Pattern for the round.</p>
+      </div>
+      <div class="stage-panel" aria-live="polite">
+        <div class="wheel-viewport">
+          <div class="wheel-pointer"></div>
+          <div class="wheel-3d" id="wheel3d">
+            <div class="wheel-label label-b">B</div>
+            <div class="wheel-label label-i">I</div>
+            <div class="wheel-label label-n">N</div>
+            <div class="wheel-label label-g">G</div>
+            <div class="wheel-label label-o">O</div>
+            <div class="wheel-center">SCI</div>
+          </div>
+        </div>
+        <div class="display-area">
+          <div class="topic" id="topic">Press "Spin Wheel" to start!</div>
+          <div class="question" id="question"></div>
+          <div class="answer" id="answer"></div>
+        </div>
+      </div>
+      <div class="controls">
+        <button id="rollBtn">🎲 Spin Wheel</button>
+        <button id="revealBtn" class="secondary">Reveal Answer</button>
+        <button id="resetBtn" class="secondary">Reset Used</button>
+        <button id="patternBtn" class="secondary">Randomize Pattern</button>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="pattern">
+        <h2>SciBingo Pattern</h2>
+        <div class="pattern-hint">(Click cells to custom-edit pattern)</div>
+        <div class="grid" id="patternGrid"></div>
+        <div class="pattern-meta" id="patternName">(pattern name)</div>
+      </div>
+      <div class="history" id="history">
+        <div class="history-title">History Log</div>
+        <div id="historyList"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const DATA = {
+  B: { title: 'Biology Questions (B)', questions: [
+    {q:'It is the part of the plant that makes food using sunlight.',a:'Leaf'},
+    {q:'It is the gas humans need to breathe in to survive.',a:'Oxygen'},
+    {q:'It is the organ that pumps blood through the body.',a:'Heart'},
+    {q:'It is the basic unit of life.',a:'Cell'},
+    {q:'It is an organism that makes its own food.',a:'Producer'},
+    {q:'It is the name for animals that eat only plants.',a:'Herbivores'},
+    {q:'It is the organ that helps you breathe.',a:'Lungs'},
+    {q:'It is the part of the cell that controls the cell’s activities.',a:'Nucleus'},
+    {q:'It is the green pigment in plants that helps with photosynthesis.',a:'Chlorophyll'},
+    {q:'It is the name for animals that give birth to live young.',a:'Mammals'},
+    {q:'It is the body part that helps us see.',a:'Eye'},
+    {q:'It is the change from a caterpillar to a butterfly.',a:'Metamorphosis'},
+    {q:'It is the part of the body that breaks down food using acid.',a:'Stomach'},
+    {q:'It is the type of animal that lays eggs and has feathers.',a:'Bird'},
+    {q:'It is the organ that filters waste from the blood.',a:'Kidney'}
+  ]},
+  I: { title: 'Chemistry Questions (I)', questions: [
+    {q:'It is a state of matter that has a definite shape and volume.',a:'Solid'},
+    {q:'It is the chemical name for water.',a:'H₂O'},
+    {q:'It is the gas that plants take in from the air.',a:'Carbon dioxide'},
+    {q:'It is the tool used to measure temperature.',a:'Thermometer'},
+    {q:'It is the process of ice turning into water.',a:'Melting'},
+    {q:'It is a substance made of only one type of atom.',a:'Element'},
+    {q:'It is the state of matter that spreads out to fill any space.',a:'Gas'},
+    {q:'It is a subatomic particle that carries a positive charge.',a:'Proton'},
+    {q:'It is a compound made up of sodium and chlorine atoms.',a:'Salt'},
+    {q:'It is the component of a solution that dissolves the solute.',a:'Solvent'},
+    {q:'It is the temperature at which a liquid becomes a gas.',a:'Boiling point'},
+    {q:'It is the smallest part of an element.',a:'Atom'},
+    {q:'It is the process when liquid turns into solid',a:'Freezing'},
+    {q:'It is the particle in an atom with no charge.',a:'Neutron'},
+    {q:'It is the process of liquid water turning into gas.',a:'Evaporation'}
+  ]},
+  N: { title: 'Physics Questions (N)', questions: [
+    {q:'It is the force that pulls everything toward Earth.',a:'Gravity'},
+    {q:'It is the term for a push or a pull.',a:'Force'},
+    {q:'It is the unit used to measure energy.',a:'Joule'},
+    {q:'It is the type of energy from moving objects.',a:'Kinetic energy'},
+    {q:'It is the form of energy we get from the sun.',a:'Light energy'},
+    {q:'It is the type of energy stored in an object due to its position.',a:'Potential energy'},
+    {q:'It is the tendency of an object to resist a change in motion.',a:'Inertia'},
+    {q:'It is the unit used to measure speed.',a:'m/s'},
+    {q:'It is the type of energy made by vibrations.',a:'Sound energy'},
+    {q:'It is the measure of how much matter is in an object.',a:'Mass'},
+    {q:'It is the thing that slows down a sliding object.',a:'Friction'},
+    {q:'It is the bouncing back of light from a surface.',a:'Reflection'},
+    {q:'It is the tool used to see far-away objects in space.',a:'Telescope'},
+    {q:'It is the simple machine that is a round object that rolls.',a:'Wheel'},
+    {q:'It is the color of light with the longest wavelength.',a:'Red'}
+  ]},
+  G: { title: 'Earth and Space Science (G)', questions: [
+    {q:'It is the planet we live on.',a:'Earth'},
+    {q:'It is the natural satellite that orbits the Earth.',a:'Moon'},
+    {q:'It is the layer of air that surrounds the Earth.',a:'Atmosphere'},
+    {q:'It is the general term for rain, snow, and hail.',a:'Precipitation'},
+    {q:'It is the outer layer of the Earth made of solid rock.',a:'Crust'},
+    {q:'It is a large body of moving ice.',a:'Glacier'},
+    {q:'It is the movement of Earth around the sun.',a:'Revolution'},
+    {q:'It is the sudden movement of the Earth’s crust.',a:'Earthquake'},
+    {q:'It is the name of the event when the moon blocks the sun.',a:'Solar eclipse'},
+    {q:'It is the type of rock formed from cooled magma.',a:'Igneous rock'},
+    {q:'It is the process of rocks breaking down by wind or water.',a:'Weathering'},
+    {q:'It is the celestial body found at the center of our solar system.',a:'Sun'},
+    {q:'It is the name of the big explosion that started the universe.',a:'Big Bang'},
+    {q:'It is the tool used to measure earthquakes.',a:'Seismograph'},
+    {q:'It is a rock that burns brightly when entering Earth’s atmosphere.',a:'Meteor'}
+  ]},
+  O: { title: 'General Science (O)', questions: [
+    {q:'It is a person who studies animals.',a:'Zoologist'},
+    {q:'It is the tool used to see tiny objects.',a:'Microscope'},
+    {q:'It is a scientific guess in conducting an experiment.',a:'Hypothesis'},
+    {q:'It is the set of steps used to solve scientific problems.',a:'Scientific method'},
+    {q:'It is a person who studies Earth, rocks, and soil.',a:'Geologist'},
+    {q:'It is a person who studies plants.',a:'Botanist'},
+    {q:'It is a branch of science that studies weather and climate.',a:'Meteorology'},
+    {q:'It is a lab material that can be used to protect your hands.',a:'Gloves'},
+    {q:'It is the final part of a science experiment.',a:'Conclusion'},
+    {q:'It is an instrument used to measure time.',a:'Stopwatch'},
+    {q:'It is the tool used to measure length.',a:'Ruler'},
+    {q:'It is the variable you change on purpose.',a:'Independent variable'},
+    {q:'It is a branch of science that studies the stars and planets.',a:'Astronomy'},
+    {q:'This scientist discovered gravity after seeing an apple fall.',a:'Isaac Newton'},
+    {q:'It is what you wear to protect your eyes during experiments.',a:'Goggles'}
+  ]}
+};
+
+const usedMap = { B:new Set(), I:new Set(), N:new Set(), G:new Set(), O:new Set() };
+const historyData = { B:[], I:[], N:[], G:[], O:[] };
+
+/* Wheel Rotation Logic */
+const wheel3d = document.getElementById('wheel3d');
+let currentRotation = 0;
+
+const LETTER_ANGLES = {
+  B: 324,
+  I: 252,
+  N: 180,
+  G: 108,
+  O: 36
+};
+
+/* DOM Controls */
+const rollBtn = document.getElementById('rollBtn');
+const revealBtn = document.getElementById('revealBtn');
+const resetBtn = document.getElementById('resetBtn');
+const patternBtn = document.getElementById('patternBtn');
+const topicEl = document.getElementById('topic');
+const questionEl = document.getElementById('question');
+const answerEl = document.getElementById('answer');
+const historyList = document.getElementById('historyList');
+const patternGrid = document.getElementById('patternGrid');
+const patternNameEl = document.getElementById('patternName');
+
+function getPool(){
+  const pool=[];
+  for(const col of ['B','I','N','G','O']){
+    DATA[col].questions.forEach((item,i)=>{
+      if(!usedMap[col].has(i)) pool.push({column:col,question:item.q,answer:item.a,index:i});
+    });
+  }
+  return pool;
+}
+
+function rollRandom(){
+  const pool = getPool();
+  if(pool.length === 0){
+    topicEl.textContent = '';
+    questionEl.textContent = 'All questions used! Click Reset to restart.';
+    answerEl.style.display = 'none';
+    return;
+  }
+
+  rollBtn.disabled = true;
+  questionEl.style.opacity = '0';
+  answerEl.style.display = 'none';
+  topicEl.textContent = "Spinning the Wheel...";
+
+  const pick = pool[Math.floor(Math.random()*pool.length)];
+  usedMap[pick.column].add(pick.index);
+
+  const targetAngle = LETTER_ANGLES[pick.column];
+  const fullSpins = 5 * 360; 
+  currentRotation += fullSpins + (targetAngle - (currentRotation % 360));
+  if (currentRotation < 0) currentRotation += 360;
+
+  wheel3d.style.transform = `rotateX(25deg) rotate(${currentRotation}deg)`;
+
+  setTimeout(() => {
+    topicEl.textContent = DATA[pick.column].title;
+    questionEl.textContent = pick.question;
+    answerEl.textContent = pick.answer;
+    questionEl.style.opacity = '1';
+
+    historyData[pick.column].push(pick.question);
+    renderHistory();
+    rollBtn.disabled = false;
+  }, 2500);
+}
+
+function resetUsed(){
+  for(const k of Object.keys(usedMap)) usedMap[k].clear();
+  for(const k of Object.keys(historyData)) historyData[k]=[];
+  
+  topicEl.textContent='Press "Spin Wheel" to begin!';
+  questionEl.textContent='';
+  answerEl.textContent='';
+  answerEl.style.display='none';
+  renderHistory();
+}
+
+function revealAnswer(){ answerEl.style.display='block'; }
+
+function renderHistory(){
+  historyList.innerHTML='';
+  for(const col of ['B','I','N','G','O']){
+    if(historyData[col] && historyData[col].length){
+      const groupTitle = document.createElement('div');
+      groupTitle.className = 'group-title';
+      groupTitle.textContent = `${col} — ${DATA[col].title}`;
+      historyList.appendChild(groupTitle);
+      historyData[col].forEach(q=>{
+        const item = document.createElement('div');
+        item.className='history-item';
+        item.textContent = '• ' + q;
+        historyList.appendChild(item);
+      });
+    }
+  }
+}
+
+/* INTERACTIVE PATTERN GRID */
+function buildPatternGrid(){
+  patternGrid.innerHTML='';
+  const cells = [];
+  for(let r=0;r<5;r++){
+    for(let c=0;c<5;c++){
+      const div = document.createElement('div');
+      div.className='cell';
+      if(r===2 && c===2){ div.classList.add('free'); div.textContent='FREE'; }
+      
+      div.addEventListener('click', () => {
+        div.classList.toggle('active');
+        patternNameEl.textContent = "Custom Pattern";
+      });
+
+      patternGrid.appendChild(div);
+      cells.push({el:div,r,c});
+    }
+  }
+  return cells;
+}
+
+const cells = buildPatternGrid();
+
+const PATTERNS = {
+  'Line (Horizontal)': () => {
+    const row = Math.floor(Math.random()*5);
+    return cells.filter(c=>c.r===row);
+  },
+  'Line (Vertical)': () => {
+    const col = Math.floor(Math.random()*5);
+    return cells.filter(c=>c.c===col);
+  },
+  'Line (Diagonal)': () => cells.filter(c=>c.r===c.c),
+  'Four Corners': () => cells.filter(c=>(c.r===0||c.r===4)&&(c.c===0||c.c===4)),
+  'X Pattern': () => cells.filter(c=> (c.r===c.c) || (c.r + c.c === 4) ),
+  'T Pattern': () => cells.filter(c=> c.r===0 || c.c===2),
+  'L Pattern': () => cells.filter(c=> c.c===0 || c.r===4),
+  'Outer Box': () => cells.filter(c=> c.r===0 || c.r===4 || c.c===0 || c.c===4),
+  'Full House': () => cells.slice()
+};
+
+const PATTERN_KEYS = Object.keys(PATTERNS);
+
+function randomizePattern(){
+  cells.forEach(c=>c.el.classList.remove('active'));
+  cells.find(c=>c.r===2 && c.c===2).el.classList.add('active');
+  
+  const key = PATTERN_KEYS[Math.floor(Math.random()*PATTERN_KEYS.length)];
+  const coords = PATTERNS[key]();
+  coords.forEach(c=>c.el.classList.add('active'));
+
+  patternNameEl.textContent = key;
+}
+
+/* Initialization */
+randomizePattern();
+renderHistory();
+
+/* Event Listeners */
+rollBtn.addEventListener('click', rollRandom);
+revealBtn.addEventListener('click', revealAnswer);
+resetBtn.addEventListener('click', resetUsed);
+patternBtn.addEventListener('click', randomizePattern);
+</script>
+</body>
+</html>
