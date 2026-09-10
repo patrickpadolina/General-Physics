@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SciBingo!</title>
+  <style>
+    body {
+      font-family: 'Trebuchet MS', sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #e0f7fa, #f1f8e9);
+      padding: 20px;
+    }
+    h1 {
+      font-size: 3em;
+      color: #2e7d32;
+      text-shadow: 2px 2px #a5d6a7;
+      margin-bottom: 20px;
+    }
+    .board {
+      display: inline-block;
+      border: 10px solid #4caf50;
+      border-radius: 20px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.4);
+      background: #fffde7;
+      margin: 10px;
+      padding: 10px;
+      page-break-inside: avoid;
+      box-sizing: border-box;
+    }
+    .board-title {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #1b5e20;
+      margin-bottom: 4px;
+      text-shadow: 1px 1px #c8e6c9;
+    }
+    .player-name {
+      font-size: 1.1em;
+      font-weight: bold;
+      color: #d81b60;
+      margin-bottom: 8px;
+    }
+    table {
+      border-collapse: collapse;
+      margin: 10px auto;
+      width: 100%;
+    }
+    th, td {
+      border: 2px solid #388e3c;
+      width: 20%;
+      height: 80px;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 14px;
+      padding: 4px;
+      white-space: normal;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+    }
+    th {
+      background: #a5d6a7;
+      font-size: 18px;
+      color: #1b5e20;
+    }
+    .free {
+      background: #ffeb3b;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .btn {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: #66bb6a;
+      color: white;
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: #43a047;
+    }
+    .highlight {
+      background: #ffcc80 !important;
+    }
+    #options {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .controls-row {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    textarea {
+      width: 300px;
+      height: 70px;
+      border-radius: 8px;
+      border: 2px solid #81c784;
+      padding: 8px;
+      font-family: inherit;
+    }
+    @media print {
+      body {
+        background: white;
+      }
+      .btn, #drawn, .decor, #options { display: none; }
+      h1 { display: none; }
+      .board {
+        box-shadow: none;
+        border: 2px solid black;
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>🔬⚛️ SciBingo! 🌍🧪</h1>
+  <div class="decor">⚛️ 🔭 🧬 🌡️ 🛰️ 🔬 🧪</div>
+  
+  <div id="options">
+    <div>
+      <label for="playerNames"><strong>Enter Names (one per line):</strong></label><br>
+      <textarea id="playerNames" placeholder="Alice&#10;Bob&#10;Charlie&#10;Diana">Alice
+Bob
+Charlie
+Diana</textarea>
+    </div>
+
+    <div class="controls-row">
+      <label for="cardsPerPage">Cards per page: </label>
+      <select id="cardsPerPage">
+        <option value="1">1</option>
+        <option value="2" selected>2</option>
+      </select>
+      
+      <label for="orientation">Orientation: </label>
+      <select id="orientation">
+        <option value="portrait">Portrait</option>
+        <option value="landscape" selected>Landscape</option>
+      </select>
+      
+      <button class="btn" onclick="generateBoardsFromNames()">Generate Cards</button>
+      <button class="btn" onclick="preparePrint()">Print Cards</button>
+    </div>
+  </div>
+  
+  <div id="boards"></div>
+  <br>
+  <button class="btn" onclick="drawItem()">Draw Item</button>
+  <button class="btn" onclick="resetDraws()">Reset Draws</button>
+  <div id="drawn"></div>
+
+  <script>
+    const categories = {
+      B: ["Leaf","Oxygen","Heart","Cell","Producer","Herbivores","Lungs","Nucleus","Chlorophyll","Mammals","Eye","Metamorphosis","Stomach","Bird","Kidney"],
+      I: ["Solid","H₂O","Carbon dioxide","Thermometer","Melting","Element","Gas","Proton","Salt","Solvent","Boiling point","Atom","Freezing","Neutron","Evaporation"],
+      N: ["Gravity","Force","Joule","Kinetic energy","Light energy","Potential energy","Inertia","m/s","Sound energy","Mass","Friction","Reflection","Telescope","Wheel","Red"],
+      G: ["Earth","Moon","Atmosphere","Precipitation","Crust","Glacier","Revolution","Earthquake","Solar eclipse","Igneous rock","Weathering","Sun","Big Bang","Seismograph","Meteor"],
+      O: ["Zoologist","Microscope","Hypothesis","Scientific method","Geologist","Botanist","Meteorology","Gloves","Conclusion","Stopwatch","Ruler","Independent variable","Astronomy","Isaac Newton","Goggles"]
+    };
+    
+    let drawnItems = [];
+
+    function shuffle(arr) {
+      let array = [...arr];
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function generateBoard(name = "") {
+      let board = '<div class="board">';
+      board += '<div class="board-title">SciBingo!</div>';
+      if (name) {
+        board += `<div class="player-name">Player: ${name}</div>`;
+      }
+      board += '<table><tr>';
+      const letters = Object.keys(categories);
+      letters.forEach(letter => board += `<th>${letter}</th>`);
+      board += '</tr>';
+      
+      let shuffledCols = {};
+      letters.forEach(letter => {
+        shuffledCols[letter] = shuffle(categories[letter]);
+      });
+
+      for (let row = 0; row < 5; row++) {
+        board += '<tr>';
+        for (let col = 0; col < 5; col++) {
+          const letter = letters[col];
+          let chosen = shuffledCols[letter][row];
+          if (row === 2 && col === 2) {
+            board += '<td class="free">FREE</td>';
+          } else {
+            board += `<td>${chosen}</td>`;
+          }
+        }
+        board += '</tr>';
+      }
+      board += '</table></div>';
+      return board;
+    }
+
+    function generateBoardsFromNames() {
+      const rawText = document.getElementById('playerNames').value;
+      const names = rawText.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+      
+      const boardsContainer = document.getElementById('boards');
+      boardsContainer.innerHTML = '';
+      
+      if (names.length === 0) {
+        boardsContainer.innerHTML = '<p>Please enter at least one name.</p>';
+        return;
+      }
+
+      names.forEach(name => {
+        boardsContainer.innerHTML += generateBoard(name);
+      });
+      
+      resetDraws();
+    }
+
+    function drawItem() {
+      const all = [].concat(...Object.keys(categories).map(l => categories[l].map(v => l + ":" + v)));
+      const remaining = all.filter(x => !drawnItems.includes(x));
+      if (remaining.length === 0) {
+        alert("All items drawn!");
+        return;
+      }
+      const pick = remaining[Math.floor(Math.random() * remaining.length)];
+      drawnItems.push(pick);
+      document.getElementById('drawn').innerHTML = `<h2>Drawn: ${pick}</h2>`;
+      highlight(pick);
+    }
+
+    function highlight(pick) {
+      const cells = document.querySelectorAll('td');
+      cells.forEach(cell => {
+        if ((pick.includes(":") && cell.textContent === pick.split(":")[1]) || cell.textContent === pick) {
+          cell.classList.add('highlight');
+        }
+      });
+    }
+
+    function resetDraws() {
+      drawnItems = [];
+      document.getElementById('drawn').innerHTML = '';
+      document.querySelectorAll('td').forEach(cell => cell.classList.remove('highlight'));
+    }
+
+    function preparePrint() {
+      const cardsPerPage = parseInt(document.getElementById("cardsPerPage").value);
+      const orientation = document.getElementById("orientation").value;
+      let styleTag = document.getElementById("dynamicPrintStyle");
+      if (!styleTag) {
+        styleTag = document.createElement("style");
+        styleTag.id = "dynamicPrintStyle";
+        document.head.appendChild(styleTag);
+      }
+      let widthPercent = 100;
+      if (cardsPerPage === 1) widthPercent = 95;
+      if (cardsPerPage === 2) widthPercent = 48;
+      styleTag.innerHTML = `
+        @media print {
+          @page { size: A4 ${orientation}; margin: 10mm; }
+          .board { width: ${widthPercent}%; display: inline-block; margin: 1%; vertical-align: top; }
+        }
+      `;
+      window.print();
+    }
+
+    // Initial run on page load
+    generateBoardsFromNames();
+  </script>
+</body>
+</html>
